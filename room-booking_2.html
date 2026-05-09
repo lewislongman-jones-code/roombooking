@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room Booking</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #F4F1EA;
+  --surface:  #FFFFFF;
+  --ink:      #111111;
+  --muted:    #6B6860;
+  --accent:   #E8380D;
+  --go:       #007A50;
+  --go-bg:    #D2F0E3;
+  --hold:     #B56800;
+  --hold-bg:  #FDEECB;
+  --bk:       #B00020;
+  --bk-bg:    #FDDDE2;
+  --border:   #DEDAD2;
+  --r:        10px;
+  --sh:       0 2px 18px rgba(0,0,0,.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+/* ── SETUP ── */
+#setup { max-width: 540px; margin: 48px auto; background: var(--surface); border-radius: 16px; box-shadow: var(--sh); padding: 36px; }
+#setup h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+.sub { color: var(--muted); font-size: .9rem; margin-bottom: 26px; line-height: 1.6; }
+.f { margin-bottom: 16px; }
+.f label { display: block; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+.f input  { width: 100%; padding: 11px 14px; border: 2px solid var(--border); border-radius: var(--r); font: inherit; font-size: .95rem; background: var(--bg); transition: border-color .15s; }
+.f input:focus { outline: none; border-color: var(--accent); }
+.f small  { display: block; color: var(--muted); font-size: .78rem; margin-top: 5px; line-height: 1.5; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 22px; border: none; border-radius: var(--r); font: inherit; font-weight: 700; font-size: .95rem; cursor: pointer; transition: opacity .15s, transform .1s; }
+.btn:active { transform: scale(.98); }
+.btn-full { width: 100%; }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { opacity: .88; }
+.btn-ghost  { background: transparent; border: 2px solid var(--border); color: var(--ink); font-size: .82rem; padding: 7px 14px; }
+.btn-ghost:hover { border-color: var(--ink); }
+
+/* ── STUB BADGE ── */
+.stub-badge { display: inline-flex; align-items: center; gap: 6px; background: #FFF8E1; border: 1.5px solid #F5A623; border-radius: 6px; padding: 6px 12px; font-size: .82rem; font-weight: 600; color: #7A4F00; margin-bottom: 20px; }
+
+/* ── APP ── */
+#app { display: none; }
+header { background: var(--ink); color: #fff; height: 58px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.logo { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.05rem; letter-spacing: -.5px; }
+.logo em { color: var(--accent); font-style: normal; }
+.week-nav { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); border-radius: 999px; padding: 4px 14px; }
+.week-nav button { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.3rem; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: background .15s; }
+.week-nav button:hover:not(:disabled) { background: rgba(255,255,255,.15); }
+.week-nav button:disabled { opacity: .3; cursor: not-allowed; }
+#week-label { color: #fff; font-weight: 600; font-size: .85rem; min-width: 158px; text-align: center; }
+main { max-width: 1140px; margin: 0 auto; padding: 22px 14px 64px; }
+
+/* ── LEGEND ── */
+.legend { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; align-items: center; }
+.li { display: flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 500; }
+.dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.d-av { background: var(--go); }
+.d-ho { background: var(--hold); }
+.d-bk { background: var(--bk); }
+
+/* ── GRID ── */
+.grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: separate; border-spacing: 0 5px; min-width: 680px; }
+thead th { font-family: 'Space Mono', monospace; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 2px 6px 10px; text-align: center; }
+thead th:first-child { text-align: left; padding-left: 14px; min-width: 118px; }
+tbody tr { background: var(--surface); }
+tbody td { padding: 7px 4px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody td:first-child { border-left: 1px solid var(--border); border-radius: var(--r) 0 0 var(--r); padding-left: 12px; }
+tbody td:last-child  { border-right: 1px solid var(--border); border-radius: 0 var(--r) var(--r) 0; }
+.rname { font-weight: 700; font-size: .88rem; }
+.rcap  { color: var(--muted); font-size: .74rem; margin-top: 1px; }
+
+/* ── SLOT BUTTON ── */
+.slot { width: 100%; min-height: 54px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; font: inherit; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; transition: transform .12s, box-shadow .12s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 5px 3px; line-height: 1.3; }
+.slot:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.11); }
+.slot:active:not(:disabled) { transform: scale(.97); }
+.s-av { background: var(--go-bg);  color: var(--go);   border-color: var(--go); }
+.s-ho { background: var(--hold-bg); color: var(--hold); border-color: var(--hold); cursor: not-allowed; }
+.s-bk { background: var(--bk-bg);  color: var(--bk);   border-color: var(--bk);  cursor: not-allowed; }
+.s-na { background: var(--bg); color: var(--border); border-color: var(--border); border-style: dashed; cursor: default; }
+.slot .sp { font-size: .9rem; font-weight: 800; }
+.slot .st { font-size: .66rem; font-weight: 500; opacity: .75; }
+.slot .stimer { font-size: .64rem; font-weight: 600; }
+
+/* ── MODAL ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.52); z-index: 200; align-items: center; justify-content: center; padding: 14px; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 18px; padding: 32px; max-width: 480px; width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,.2); position: relative; max-height: 92vh; overflow-y: auto; }
+.modal h2 { font-size: 1.35rem; font-weight: 800; margin-bottom: 5px; }
+.msub  { color: var(--muted); font-size: .88rem; margin-bottom: 20px; }
+.xbtn  { position: absolute; top: 14px; right: 14px; background: var(--bg); border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+.xbtn:hover { background: var(--border); }
+.summary { background: var(--bg); border-radius: var(--r); padding: 14px 16px; margin-bottom: 18px; font-size: .88rem; line-height: 2.1; }
+.summary strong { font-weight: 700; }
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#pay-msg { color: var(--bk); font-size: .82rem; margin-top: 8px; min-height: 18px; }
+
+/* ── STUB PAYMENT FORM ── */
+#stub-payment { background: #FFFBF0; border: 2px dashed #F5A623; border-radius: var(--r); padding: 18px 20px; margin-bottom: 16px; }
+#stub-payment p { font-size: .82rem; color: #7A4F00; font-weight: 600; margin-bottom: 12px; }
+.stub-card { display: grid; gap: 10px; }
+.stub-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#stub-payment input { width: 100%; padding: 9px 12px; border: 1.5px solid #F5A623; border-radius: 7px; font: inherit; font-size: .88rem; background: #fff; letter-spacing: .06em; }
+#stub-payment input:focus { outline: none; border-color: var(--accent); }
+#stub-payment input::placeholder { letter-spacing: normal; color: #bbb; }
+
+/* ── LOADING ── */
+#loading { display: none; text-align: center; padding: 80px 20px; color: var(--muted); }
+.spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .65s linear infinite; margin: 0 auto 14px; }
+.spinner-sm { width: 17px; height: 17px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SUCCESS ── */
+#success { display: none; text-align: center; max-width: 400px; margin: 70px auto; background: var(--surface); border-radius: 18px; padding: 44px 32px; box-shadow: var(--sh); }
+#success .ck { font-size: 3.2rem; margin-bottom: 14px; }
+#success h2  { font-size: 1.45rem; font-weight: 800; margin-bottom: 8px; }
+#success p   { color: var(--muted); margin-bottom: 26px; font-size: .9rem; line-height: 1.7; }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 11px 22px; border-radius: 999px; font-size: .875rem; font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 999; max-width: 90vw; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#toast.show { opacity: 1; }
+
+@media (max-width: 620px) {
+  header { padding: 0 10px; }
+  #week-label { min-width: 116px; font-size: .75rem; }
+  main { padding: 12px 6px 56px; }
+  .slot { min-height: 46px; }
+  .modal { padding: 22px 16px; }
+  .frow, .stub-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SETUP ══════════ -->
+<div id="setup">
+  <h1>🏢 Room Booking</h1>
+  <div class="sub">Paste your Google Apps Script web app URL below. That's all that's needed — the script handles everything including payments.</div>
+
+  <div class="stub-badge">🧪 Stripe is currently in <strong>test mode</strong> — no real payments will be taken</div>
+
+  <div class="f">
+    <label>Apps Script Web App URL</label>
+    <input id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec">
+    <small>
+      In Apps Script editor: <strong>Deploy → New deployment → Web app</strong><br>
+      Execute as: <em>Me</em> &nbsp;·&nbsp; Access: <em>Anyone</em><br>
+      Copy the URL and paste it here.
+    </small>
+  </div>
+  <button class="btn btn-accent btn-full" onclick="saveSetup()">Launch →</button>
+
+  <details style="margin-top:26px">
+    <summary style="cursor:pointer;font-weight:700;font-size:.88rem">📋 Setup guide</summary>
+    <div style="margin-top:10px;padding:14px;background:var(--bg);border-radius:var(--r);font-size:.8rem;color:var(--muted);line-height:1.9">
+      <strong style="color:var(--ink)">1.</strong> Open a Google Sheet. Go to <em>Extensions → Apps Script</em>.<br>
+      <strong style="color:var(--ink)">2.</strong> Delete the default code. Paste all of <code>Code.gs</code>.<br>
+      <strong style="color:var(--ink)">3.</strong> Select <code>setupAvailabilitySheet</code> and click <strong>Run</strong> to create the data tab.<br>
+      <strong style="color:var(--ink)">4.</strong> Go to <em>Deploy → New deployment → Web app</em>. Set Execute as <strong>Me</strong>, Access <strong>Anyone</strong>. Deploy and copy the URL.<br>
+      <strong style="color:var(--ink)">5.</strong> Paste the URL above and click Launch.<br>
+      <strong style="color:var(--ink)">6.</strong> Optional: add a 5-minute time trigger on <code>releaseExpiredHolds</code>.<br><br>
+      <strong style="color:var(--ink)">When you get Stripe:</strong> set <code>STRIPE_MODE = 'live'</code> and add your secret key in Code.gs, then redeploy. Add your publishable key in the setup form below.
+    </div>
+  </details>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="app">
+  <header>
+    <div class="logo">ROOM<em>BOOK</em></div>
+    <div class="week-nav">
+      <button id="btn-prev" disabled title="Previous week">‹</button>
+      <div id="week-label">—</div>
+      <button id="btn-next" title="Next week">›</button>
+    </div>
+    <button class="btn btn-ghost" onclick="openSetup()" style="color:#fff;border-color:rgba(255,255,255,.25)">⚙ Settings</button>
+  </header>
+
+  <main>
+    <div class="legend">
+      <div class="li"><div class="dot d-av"></div> Available — click to book</div>
+      <div class="li"><div class="dot d-ho"></div> On hold · 10 min</div>
+      <div class="li"><div class="dot d-bk"></div> Booked</div>
+      <div id="stub-legend" class="li" style="margin-left:auto;background:#FFF8E1;border:1.5px solid #F5A623;border-radius:6px;padding:4px 10px;color:#7A4F00">🧪 Test mode — no real payments</div>
+    </div>
+    <div id="loading"><div class="spinner"></div>Loading rooms…</div>
+    <div class="grid-wrap">
+      <table id="tbl" style="display:none">
+        <thead id="tbl-head"></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════ BOOKING MODAL ══════════ -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="xbtn" onclick="closeModal()">✕</button>
+    <h2>Book this Room</h2>
+    <div class="msub">Complete your details to confirm the half-day slot.</div>
+    <div class="summary" id="bk-summary"></div>
+
+    <div class="frow">
+      <div class="f"><label>First name</label><input id="g-first" autocomplete="given-name" placeholder="Jane"></div>
+      <div class="f"><label>Last name</label> <input id="g-last"  autocomplete="family-name" placeholder="Smith"></div>
+    </div>
+    <div class="f"><label>Email</label><input id="g-email" type="email" autocomplete="email" placeholder="jane@example.com"></div>
+
+    <!-- Stub payment form (shown when Stripe is not configured) -->
+    <div id="stub-payment">
+      <p>🧪 Test payment — enter any values below (nothing is charged)</p>
+      <div class="stub-card">
+        <div class="f" style="margin:0"><label style="font-size:.74rem">Card number</label>
+          <input id="stub-card" placeholder="4242 4242 4242 4242" maxlength="19" oninput="fmtCard(this)"></div>
+        <div class="stub-row">
+          <div class="f" style="margin:0"><label style="font-size:.74rem">Expiry</label>
+            <input id="stub-exp" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)"></div>
+          <div class="f" style="margin:0"><label style="font-size:.74rem">CVC</label>
+            <input id="stub-cvc" placeholder="123" maxlength="4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real Stripe Elements mount point (shown when Stripe is configured) -->
+    <div id="stripe-payment" style="display:none;margin-bottom:16px"></div>
+
+    <div id="pay-msg"></div>
+    <button class="btn btn-accent btn-full" id="pay-btn" onclick="submitPayment()">Confirm Booking</button>
+  </div>
+</div>
+
+<!-- ══════════ SUCCESS ══════════ -->
+<div id="success">
+  <div class="ck">✅</div>
+  <h2>You're booked!</h2>
+  <p id="success-detail"></p>
+  <button class="btn btn-accent btn-full" style="margin-bottom:12px" onclick="backToGrid()">Book Another Room</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════ */
+var LS = 'rb3_cfg';
+var CFG = { url: '', stripeKey: '' };
+
+function saveSetup() {
+  var url = document.getElementById('cfg-url').value.trim();
+  if (!url) { toast('Please paste your Apps Script web app URL.'); return; }
+  CFG.url = url;
+  localStorage.setItem(LS, JSON.stringify(CFG));
+  boot();
+}
+function openSetup() {
+  show('setup'); hide('app'); hide('success');
+}
+function loadCfg() {
+  try { var s = localStorage.getItem(LS); if (s) CFG = JSON.parse(s); } catch(_) {}
+  return !!CFG.url;
+}
+
+/* ════════════════════════════════════════════════════
+   JSONP — all calls go via GET so there's no CORS
+   preflight. Works with Workspace-scoped URLs.
+════════════════════════════════════════════════════ */
+function appsCall(params) {
+  return new Promise(function(resolve, reject) {
+    var cb    = '_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var timer = setTimeout(function() {
+      cleanup();
+      reject(new Error('Request timed out. Check the web app URL, and that Access is set to "Anyone".'));
+    }, 25000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cb];
+      var el = document.getElementById(cb);
+      if (el) el.parentNode.removeChild(el);
+    }
+
+    window[cb] = function(data) {
+      cleanup();
+      if (data && data.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+
+    var qs  = new URLSearchParams(Object.assign({}, params, { callback: cb })).toString();
+    var tag = document.createElement('script');
+    tag.id  = cb;
+    tag.src = CFG.url + '?' + qs;
+    tag.onerror = function() {
+      cleanup();
+      reject(new Error('Could not reach Apps Script. Verify the URL is correct and the deployment allows access by Anyone.'));
+    };
+    document.head.appendChild(tag);
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════ */
+var weekOffset  = 0;
+var allSlots    = [];
+var currentSlot = null;
+var stripeObj   = null;
+var stripeElems = null;
+var isStubMode  = true;   // flipped to false once real Stripe is initialised
+
+/* ════════════════════════════════════════════════════
+   DATE HELPERS
+════════════════════════════════════════════════════ */
+function weekMonday(off) {
+  var d = new Date(), day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + off * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function addDays(d, n) { var r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function iso(d)   { return d.toISOString().slice(0,10); }
+function disp(d)  { return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function dfull(d) { return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
+function weekDates() { return Array.from({length:7},function(_,i){return addDays(weekMonday(weekOffset),i);}); }
+
+/* ════════════════════════════════════════════════════
+   WEEK NAV
+════════════════════════════════════════════════════ */
+function setWeekLabel() {
+  var dates = weekDates();
+  document.getElementById('week-label').textContent = disp(dates[0]) + ' – ' + disp(dates[6]);
+  document.getElementById('btn-prev').disabled = weekOffset <= 0;
+}
+document.getElementById('btn-prev').addEventListener('click', function() {
+  if (weekOffset > 0) { weekOffset--; setWeekLabel(); renderGrid(); }
+});
+document.getElementById('btn-next').addEventListener('click', function() {
+  weekOffset++; setWeekLabel(); renderGrid();
+});
+
+/* ════════════════════════════════════════════════════
+   RENDER GRID
+════════════════════════════════════════════════════ */
+function getRooms() {
+  var m = [];
+  var seen = {};
+  allSlots.forEach(function(s) {
+    if (!seen[s.roomId]) {
+      seen[s.roomId] = true;
+      m.push({ roomId: s.roomId, roomName: s.roomName, capacity: s.capacity });
+    }
+  });
+  return m;
+}
+
+function renderGrid() {
+  var dates = weekDates();
+  var rooms = getRooms();
+  var head  = document.getElementById('tbl-head');
+  var body  = document.getElementById('tbl-body');
+
+  head.innerHTML =
+    '<tr><th>Room</th>' +
+    dates.map(function(d){ return '<th colspan="2">'+dfull(d)+'</th>'; }).join('') +
+    '</tr><tr><th></th>' +
+    dates.map(function(){ return '<th style="font-size:.66rem;padding-bottom:8px">AM</th><th style="font-size:.66rem;padding-bottom:8px">PM</th>'; }).join('') +
+    '</tr>';
+
+  body.innerHTML = rooms.map(function(room) {
+    var cells = dates.map(function(d) {
+      var ds = iso(d);
+      return ['AM','PM'].map(function(s) {
+        var slot = allSlots.filter(function(x){ return x.roomId===room.roomId && x.date===ds && x.slot===s; })[0];
+        if (!slot) return '<td><button class="slot s-na" disabled>—</button></td>';
+        var st = slot.status;
+        if (st === 'available') {
+          return '<td><button class="slot s-av" onclick="clickSlot(\''+slot.roomId+'\',\''+ds+'\',\''+s+'\')" title="Book '+escHtml(room.roomName)+' · '+ds+' · '+s+'">' +
+            '<span class="sp">£'+slot.price+'</span>' +
+            '<span class="st">'+(s==='AM'?'8am–1pm':'1pm–6pm')+'</span>' +
+            '</button></td>';
+        }
+        if (st === 'hold') {
+          var mins = Math.max(0, Math.round((new Date(slot.holdExpiry) - Date.now()) / 60000));
+          return '<td><button class="slot s-ho" disabled title="On hold">' +
+            '<span class="st">On Hold</span><span class="stimer">~'+mins+'m left</span>' +
+            '</button></td>';
+        }
+        return '<td><button class="slot s-bk" disabled title="Booked"><span class="st">Booked</span></button></td>';
+      }).join('');
+    }).join('');
+
+    return '<tr>' +
+      '<td><div class="rname">'+escHtml(room.roomName)+'</div>' +
+      '<div class="rcap">'+(room.capacity ? 'Up to '+room.capacity+' people' : '')+'</div></td>' +
+      cells + '</tr>';
+  }).join('');
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ════════════════════════════════════════════════════
+   SLOT CLICK  →  HOLD  →  MODAL
+════════════════════════════════════════════════════ */
+async function clickSlot(roomId, date, slotLabel) {
+  var slot = allSlots.filter(function(s){ return s.roomId===roomId && s.date===date && s.slot===slotLabel; })[0];
+  if (!slot || slot.status !== 'available') {
+    toast('This slot just became unavailable — please try another.'); return;
+  }
+
+  // Optimistic local update
+  slot.status = 'hold';
+  slot.holdExpiry = new Date(Date.now() + 10*60*1000).toISOString();
+  renderGrid();
+
+  try {
+    var res = await appsCall({ action: 'placeHold', rowNum: slot._row });
+    slot.holdExpiry = res.holdExpiry;
+    slot.bookingRef = res.holdRef;
+    currentSlot = Object.assign({}, slot, { holdRef: res.holdRef });
+    openModal();
+  } catch(e) {
+    slot.status = 'available'; slot.holdExpiry = ''; slot.bookingRef = '';
+    renderGrid();
+    toast(e.message);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   MODAL
+════════════════════════════════════════════════════ */
+function openModal() {
+  var s = currentSlot;
+  var dateObj = new Date(s.date + 'T12:00:00');
+  document.getElementById('bk-summary').innerHTML =
+    '<div><strong>Room:</strong> '+escHtml(s.roomName)+'</div>' +
+    '<div><strong>Date:</strong> '+dateObj.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>' +
+    '<div><strong>Session:</strong> '+(s.slot==='AM'?'Morning — 8am to 1pm':'Afternoon — 1pm to 6pm')+'</div>' +
+    '<div><strong>Price:</strong> £'+s.price.toFixed(2)+'</div>';
+
+  ['g-first','g-last','g-email','stub-card','stub-exp','stub-cvc'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('pay-msg').textContent = '';
+  document.getElementById('pay-btn').disabled = false;
+  document.getElementById('pay-btn').textContent = 'Confirm Booking — £' + s.price.toFixed(2);
+
+  document.getElementById('modal-overlay').classList.add('open');
+
+  // Try to initialise Stripe if a key is configured
+  initPayment(s);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (currentSlot) {
+    appsCall({ action: 'releaseHold', rowNum: currentSlot._row, holdRef: currentSlot.holdRef }).catch(function(){});
+    var local = allSlots.filter(function(s){ return s._row === currentSlot._row; })[0];
+    if (local) { local.status = 'available'; local.holdExpiry = ''; local.bookingRef = ''; }
+    currentSlot = null;
+    renderGrid();
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   PAYMENT  —  stub OR real Stripe
+════════════════════════════════════════════════════ */
+async function initPayment(slot) {
+  // Ask Apps Script to create (or stub) a payment intent
+  try {
+    var res = await appsCall({
+      action:   'createPaymentIntent',
+      amount:   Math.round(slot.price * 100),
+      rowNum:   slot._row,
+      roomId:   slot.roomId,
+      roomName: slot.roomName,
+      date:     slot.date,
+      slot:     slot.slot,
+      holdRef:  slot.holdRef,
+    });
+
+    currentSlot._paymentIntentId = res.paymentIntentId;
+    currentSlot._clientSecret    = res.clientSecret;
+    isStubMode = !!res.stub;
+
+    if (!isStubMode && CFG.stripeKey) {
+      // Mount real Stripe Elements
+      document.getElementById('stub-payment').style.display   = 'none';
+      document.getElementById('stripe-payment').style.display = 'block';
+      if (!stripeObj) stripeObj = Stripe(CFG.stripeKey);
+      stripeElems = stripeObj.elements({
+        appearance: { theme:'stripe', variables:{ colorPrimary:'#E8380D', borderRadius:'8px', fontFamily:'DM Sans, sans-serif' }},
+        clientSecret: res.clientSecret,
+      });
+      stripeElems.create('payment').mount('#stripe-payment');
+    } else {
+      document.getElementById('stub-payment').style.display   = 'block';
+      document.getElementById('stripe-payment').style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('pay-msg').textContent = '⚠ ' + e.message;
+  }
+}
+
+async function submitPayment() {
+  var first = document.getElementById('g-first').value.trim();
+  var last  = document.getElementById('g-last').value.trim();
+  var email = document.getElementById('g-email').value.trim();
+
+  if (!first || !last)                               { setMsg('Please enter your full name.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))    { setMsg('Please enter a valid email address.'); return; }
+
+  var btn = document.getElementById('pay-btn');
+  btn.innerHTML = '<span class="spinner-sm"></span> Processing…';
+  btn.disabled  = true;
+  setMsg('');
+
+  if (isStubMode) {
+    // ── STUB: simulate a short delay then confirm ──────────────────────────
+    await delay(1200);
+    await finaliseBooking(first + ' ' + last, email, currentSlot._paymentIntentId || 'STUB');
+  } else {
+    // ── LIVE: confirm via Stripe.js ────────────────────────────────────────
+    try {
+      var result = await stripeObj.confirmPayment({
+        elements: stripeElems,
+        confirmParams: {
+          return_url: window.location.href,
+          payment_method_data: { billing_details: { name: first+' '+last, email: email }},
+        },
+        redirect: 'if_required',
+      });
+      if (result.error) {
+        setMsg(result.error.message);
+        btn.textContent = 'Confirm Booking — £' + currentSlot.price.toFixed(2);
+        btn.disabled = false;
+        return;
+      }
+      if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+        await finaliseBooking(first+' '+last, email, result.paymentIntent.id);
+      }
+    } catch(e) {
+      setMsg(e.message);
+      btn.textContent = 'Confirm Booking — £' + currentSlot.price.toFixed(2);
+      btn.disabled = false;
+    }
+  }
+}
+
+async function finaliseBooking(guestName, guestEmail, paymentIntentId) {
+  try {
+    var res = await appsCall({
+      action:          'confirmBooking',
+      rowNum:          currentSlot._row,
+      paymentIntentId: paymentIntentId,
+      holdRef:         currentSlot.holdRef,
+      guestName:       guestName,
+      guestEmail:      guestEmail,
+      amountPaid:      currentSlot.price.toFixed(2),
+    });
+    if (res.error) { setMsg('Sheet write error: ' + res.error); restorePayBtn(); return; }
+
+    var local = allSlots.filter(function(s){ return s._row === currentSlot._row; })[0];
+    if (local) { local.status = 'booked'; local.holdExpiry = ''; local.bookingRef = res.bookingRef; }
+
+    document.getElementById('modal-overlay').classList.remove('open');
+    showSuccess(currentSlot, guestName.split(' ')[0], res.bookingRef);
+    currentSlot = null;
+  } catch(e) {
+    setMsg('Could not record booking: ' + e.message);
+    restorePayBtn();
+  }
+}
+
+function restorePayBtn() {
+  var btn = document.getElementById('pay-btn');
+  btn.textContent = 'Confirm Booking — £' + (currentSlot ? currentSlot.price.toFixed(2) : '');
+  btn.disabled = false;
+}
+function setMsg(m) { document.getElementById('pay-msg').textContent = m; }
+function delay(ms) { return new Promise(function(r){ setTimeout(r,ms); }); }
+
+/* ════════════════════════════════════════════════════
+   STUB CARD FORMATTERS
+════════════════════════════════════════════════════ */
+function fmtCard(el) {
+  var v = el.value.replace(/\D/g,'').slice(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function fmtExp(el) {
+  var v = el.value.replace(/\D/g,'').slice(0,4);
+  if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
+  el.value = v;
+}
+
+/* ════════════════════════════════════════════════════
+   SUCCESS
+════════════════════════════════════════════════════ */
+function showSuccess(slot, firstName, ref) {
+  hide('app');
+  var dateObj = new Date(slot.date + 'T12:00:00');
+  document.getElementById('success-detail').innerHTML =
+    'Hi ' + escHtml(firstName) + '!<br><br>' +
+    '<strong>' + escHtml(slot.roomName) + '</strong><br>' +
+    dateObj.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + '<br>' +
+    (slot.slot === 'AM' ? 'Morning — 8am to 1pm' : 'Afternoon — 1pm to 6pm') + '<br><br>' +
+    'Booking reference: <strong>' + ref + '</strong>' +
+    (isStubMode ? '<br><br><em style="font-size:.8rem;color:#B56800">🧪 Test booking — no payment taken</em>' : '');
+  show('success');
+}
+
+function backToGrid() {
+  hide('success'); show('app'); loadSlots();
+}
+
+/* ════════════════════════════════════════════════════
+   LOAD SLOTS
+════════════════════════════════════════════════════ */
+async function loadSlots() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('tbl').style.display     = 'none';
+  try {
+    var res = await appsCall({ action: 'getAvailability' });
+    allSlots = res.slots || [];
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('tbl').style.display     = 'table';
+    renderGrid();
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:var(--bk);font-weight:600">⚠ Could not load availability<br>' +
+      '<small style="color:var(--muted);font-weight:400">' + e.message + '</small></div>';
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════════════════ */
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 3800);
+}
+
+/* ════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════ */
+function boot() {
+  hide('setup'); hide('success'); show('app');
+  setWeekLabel();
+  loadSlots();
+  setInterval(function() {
+    if (!document.getElementById('modal-overlay').classList.contains('open')) loadSlots();
+  }, 90000);
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  if (loadCfg()) {
+    document.getElementById('cfg-url').value = CFG.url || '';
+    boot();
+  }
+});
+</script>
+</body>
+</html>
