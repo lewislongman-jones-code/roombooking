@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Hire — Toynbee Studios</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   DESIGN TOKENS  — Artsadmin palette
+══════════════════════════════════════════════════════ */
+:root {
+  --cream:    #f9f6ef;   /* site background */
+  --white:    #ffffff;
+  --ink:      #0e0e0e;
+  --mid:      #5a5750;
+  --border:   #d8d4cb;
+  --green:    #1a5c38;
+  --green-bg: #e4f0e9;
+  --amber:    #8a5000;
+  --amber-bg: #fdf0d8;
+  --red:      #8b1a1a;
+  --red-bg:   #fce8e8;
+  --sel:      #0e0e0e;   /* selected slot bg */
+  --sel-txt:  #f9f6ef;
+  --r:        0px;       /* Artsadmin uses sharp corners */
+  --sh:       0 1px 4px rgba(0,0,0,.08), 0 4px 24px rgba(0,0,0,.06);
+  --basket-h: 0px;       /* updated by JS when basket visible */
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; font-size: 15px; }
+
+/* ── TYPE ── */
+h1,h2,h3,.serif { font-family: 'EB Garamond', Georgia, serif; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 400; line-height: 1.15; }
+h2 { font-size: 1.55rem; font-weight: 400; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+em { font-style: italic; }
+a  { color: inherit; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 26px; border: 2px solid var(--ink); border-radius: var(--r);
+  font-family: 'Inter', sans-serif; font-weight: 600; font-size: .88rem;
+  letter-spacing: .02em; cursor: pointer; transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.btn-fill  { background: var(--ink); color: var(--cream); }
+.btn-fill:hover { background: #333; border-color: #333; }
+.btn-ghost { background: transparent; color: var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: var(--cream); }
+.btn-full  { width: 100%; }
+.btn-sm    { padding: 9px 18px; font-size: .82rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── FORM ── */
+.f { margin-bottom: 16px; }
+.f label { display: block; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--mid); margin-bottom: 6px; }
+.f input, .f textarea, .f select {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid var(--border); border-radius: var(--r);
+  font: inherit; font-size: .95rem; background: var(--white);
+  transition: border-color .15s;
+}
+.f input:focus, .f textarea:focus { outline: none; border-color: var(--ink); }
+.f small { display: block; color: var(--mid); font-size: .76rem; margin-top: 5px; line-height: 1.5; }
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ══════════════════════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════════════════════ */
+#setup {
+  max-width: 560px; margin: 56px auto 0;
+  padding: 0 20px 60px;
+}
+#setup .setup-head { border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 28px; }
+#setup .setup-head p { font-family: 'EB Garamond', serif; font-size: 1.1rem; font-style: italic; color: var(--mid); margin-top: 6px; }
+.test-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+#test-result { font-size: .82rem; font-weight: 600; color: var(--mid); }
+.notice { background: var(--amber-bg); border-left: 3px solid var(--amber); padding: 10px 14px; font-size: .82rem; color: var(--amber); font-weight: 600; margin-bottom: 20px; border-radius: 0 4px 4px 0; }
+details summary { cursor: pointer; font-weight: 600; font-size: .88rem; margin-top: 22px; }
+details .guide  { margin-top: 10px; padding: 14px 16px; background: var(--white); border: 1px solid var(--border); font-size: .8rem; color: var(--mid); line-height: 1.9; }
+
+/* ══════════════════════════════════════════════════════
+   APP HEADER
+══════════════════════════════════════════════════════ */
+#app { display: none; padding-bottom: 0; }
+
+.site-header {
+  background: var(--cream);
+  border-bottom: 2px solid var(--ink);
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 58px;
+  position: sticky; top: 0; z-index: 100;
+}
+.site-logo {
+  font-family: 'EB Garamond', serif;
+  font-size: 1.25rem; font-weight: 400; letter-spacing: .01em;
+  text-decoration: none; color: var(--ink);
+}
+.site-logo em { font-style: italic; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.week-nav { display: flex; align-items: center; gap: 6px; }
+.week-nav button {
+  background: none; border: 1.5px solid var(--border); color: var(--ink);
+  cursor: pointer; width: 32px; height: 32px; border-radius: 0;
+  font-size: 1.1rem; line-height: 1; display: flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s;
+}
+.week-nav button:hover:not(:disabled) { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+.week-nav button:disabled { opacity: .28; cursor: not-allowed; }
+#week-label { font-size: .82rem; font-weight: 600; min-width: 150px; text-align: center; }
+
+/* ══════════════════════════════════════════════════════
+   MAIN GRID AREA
+══════════════════════════════════════════════════════ */
+main { max-width: 1200px; margin: 0 auto; padding: 28px 20px; padding-bottom: calc(var(--basket-h) + 32px); }
+
+.page-title { margin-bottom: 6px; }
+.page-sub   { font-family: 'EB Garamond', serif; font-size: 1.05rem; font-style: italic; color: var(--mid); margin-bottom: 22px; }
+
+/* ── LEGEND ── */
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; align-items: center; }
+.li { display: flex; align-items: center; gap: 7px; font-size: .8rem; font-weight: 500; }
+.dot { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; }
+.d-av  { background: var(--green-bg); border: 1.5px solid var(--green); }
+.d-sel { background: var(--sel); }
+.d-ho  { background: var(--amber-bg); border: 1.5px solid var(--amber); }
+.d-bk  { background: var(--red-bg); border: 1.5px solid var(--red); }
+
+/* ── LOADING ── */
+#loading { display: none; text-align: center; padding: 80px 20px; color: var(--mid); }
+.spinner { width: 32px; height: 32px; border: 2.5px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin .65s linear infinite; margin: 0 auto 14px; }
+.spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── GRID TABLE ── */
+.grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table {
+  width: 100%; border-collapse: collapse; min-width: 700px;
+  table-layout: fixed;
+}
+
+/* Day group column headers */
+.day-th {
+  text-align: center; padding: 10px 6px 8px;
+  font-family: 'EB Garamond', serif; font-size: .95rem; font-weight: 500;
+  border-bottom: 2px solid var(--ink);
+  border-left: 2px solid var(--ink);
+  background: var(--cream);
+}
+.day-th:first-child { border-left: none; }
+.day-th.today-col { background: var(--ink); color: var(--cream); }
+
+/* AM/PM sub-headers */
+.slot-th {
+  text-align: center; padding: 5px 3px 8px;
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--mid); border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.slot-th.day-start { border-left: 2px solid var(--ink); }
+.room-th {
+  text-align: left; padding: 5px 3px 8px 0;
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--mid); border-bottom: 1px solid var(--border);
+}
+
+/* Room name cells */
+tbody td.room-cell {
+  padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.rname { font-weight: 600; font-size: .88rem; }
+.rcap  { color: var(--mid); font-size: .73rem; margin-top: 1px; }
+
+/* Slot cells */
+tbody td.slot-cell {
+  padding: 5px 3px; border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  vertical-align: middle;
+}
+tbody td.slot-cell.day-start { border-left: 2px solid var(--ink); }
+
+/* ── SLOT BUTTON ── */
+.slot {
+  width: 100%; min-height: 56px; border: 1.5px solid transparent;
+  cursor: pointer; font-family: 'Inter', sans-serif; font-size: .69rem; font-weight: 600;
+  letter-spacing: .03em; text-transform: uppercase;
+  transition: transform .1s, box-shadow .1s, background .1s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 5px 2px; line-height: 1.3;
+}
+.slot:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.12); }
+.slot:active:not(:disabled) { transform: scale(.97); }
+
+.s-av  { background: var(--green-bg); color: var(--green);   border-color: var(--green); }
+.s-av:hover { background: #c5e8d3; }
+.s-sel { background: var(--sel);      color: var(--sel-txt); border-color: var(--sel); }
+.s-ho  { background: var(--amber-bg); color: var(--amber);   border-color: var(--amber); cursor: not-allowed; }
+.s-bk  { background: var(--red-bg);   color: var(--red);     border-color: var(--red);   cursor: not-allowed; }
+.s-na  { background: transparent; color: var(--border); border: 1.5px dashed var(--border); cursor: default; }
+
+.slot .sp    { font-size: .88rem; font-weight: 700; }
+.slot .st    { font-size: .65rem; opacity: .8; }
+.slot .stimer{ font-size: .63rem; font-weight: 600; }
+.slot .ck-icon { font-size: .95rem; line-height: 1; }
+
+/* ══════════════════════════════════════════════════════
+   BASKET  — sticky bottom bar
+══════════════════════════════════════════════════════ */
+#basket {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+  background: var(--white);
+  border-top: 2px solid var(--ink);
+  box-shadow: 0 -4px 24px rgba(0,0,0,.10);
+  max-height: 55vh; overflow-y: auto;
+}
+#basket.open { display: block; }
+
+.basket-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--white); z-index: 2;
+}
+.basket-header h3 { font-family: 'EB Garamond', serif; font-size: 1.1rem; font-weight: 500; }
+.basket-count { background: var(--ink); color: var(--cream); font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.basket-clear { background: none; border: none; cursor: pointer; font: inherit; font-size: .78rem; color: var(--mid); text-decoration: underline; padding: 0; }
+.basket-clear:hover { color: var(--ink); }
+
+.basket-items { padding: 8px 20px; }
+.basket-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: .85rem;
+}
+.basket-item:last-child { border-bottom: none; }
+.basket-item .bi-room  { font-weight: 600; flex: 1; }
+.basket-item .bi-date  { color: var(--mid); font-size: .8rem; flex: 1.2; }
+.basket-item .bi-slot  { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--mid); width: 36px; text-align: center; }
+.basket-item .bi-price { font-weight: 700; width: 52px; text-align: right; }
+.basket-item .bi-rm    { background: none; border: none; cursor: pointer; color: var(--mid); font-size: 1rem; line-height: 1; padding: 0 4px; flex-shrink: 0; }
+.basket-item .bi-rm:hover { color: var(--red); }
+
+.basket-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 12px 20px; border-top: 1px solid var(--border);
+  position: sticky; bottom: 0; background: var(--white); z-index: 2;
+  flex-wrap: wrap;
+}
+.basket-total { font-family: 'EB Garamond', serif; font-size: 1.2rem; }
+.basket-total span { font-weight: 700; }
+
+/* ══════════════════════════════════════════════════════
+   SCREENS  (checkout, terms, payment, success)
+══════════════════════════════════════════════════════ */
+.screen { display: none; max-width: 620px; margin: 0 auto; padding: 40px 20px 80px; }
+.screen.open { display: block; }
+
+.screen-head { border-bottom: 2px solid var(--ink); padding-bottom: 16px; margin-bottom: 28px; }
+.screen-head p { font-family: 'EB Garamond', serif; font-style: italic; color: var(--mid); margin-top: 5px; }
+.back-link { display: inline-flex; align-items: center; gap: 5px; font-size: .82rem; color: var(--mid); cursor: pointer; border: none; background: none; font: inherit; padding: 0 0 18px; text-decoration: underline; }
+.back-link:hover { color: var(--ink); }
+
+/* Order summary table */
+.order-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; font-size: .88rem; }
+.order-table th { text-align: left; font-size: .74rem; text-transform: uppercase; letter-spacing: .07em; color: var(--mid); padding: 0 0 8px; border-bottom: 1px solid var(--ink); }
+.order-table td { padding: 10px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+.order-table tr:last-child td { border-bottom: none; }
+.order-table .total-row td { padding-top: 14px; font-weight: 700; font-family: 'EB Garamond', serif; font-size: 1.1rem; border-top: 2px solid var(--ink); }
+
+/* Terms */
+.terms-body { background: var(--white); border: 1px solid var(--border); padding: 20px 22px; font-size: .84rem; line-height: 1.8; color: var(--mid); max-height: 260px; overflow-y: auto; margin-bottom: 18px; }
+.terms-body h4 { font-family: 'EB Garamond', serif; font-size: 1rem; color: var(--ink); margin-bottom: 4px; margin-top: 14px; }
+.terms-body h4:first-child { margin-top: 0; }
+.agree-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; cursor: pointer; }
+.agree-row input[type=checkbox] { margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--ink); cursor: pointer; }
+.agree-row label { font-size: .88rem; cursor: pointer; line-height: 1.5; }
+
+/* Stub payment form */
+.stub-box { background: var(--amber-bg); border: 1.5px dashed var(--amber); padding: 16px 18px; margin-bottom: 18px; }
+.stub-box p { font-size: .8rem; color: var(--amber); font-weight: 600; margin-bottom: 12px; }
+.stub-box input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--amber); font: inherit; font-size: .88rem; background: #fff; margin-bottom: 10px; }
+.stub-box input:last-child { margin-bottom: 0; }
+.stub-box input:focus { outline: none; border-color: var(--ink); }
+.stub-box .stub-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Real Stripe mount */
+#stripe-element { margin-bottom: 18px; }
+
+/* Messages */
+#pay-msg { color: var(--red); font-size: .82rem; margin-bottom: 10px; min-height: 18px; white-space: pre-wrap; }
+
+/* Success */
+#success-screen .success-icon { font-size: 3rem; margin-bottom: 14px; }
+#success-screen h2 { margin-bottom: 10px; }
+#success-screen .ref-box { background: var(--white); border: 1px solid var(--border); padding: 14px 18px; font-size: .88rem; line-height: 1.9; margin: 18px 0 26px; }
+#success-screen .ref-box strong { font-weight: 700; }
+
+/* ══════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════ */
+#toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--cream); padding: 11px 22px; font-size: .875rem; font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 999; max-width: 92vw; text-align: center; }
+#toast.show { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+@media (max-width: 680px) {
+  .site-header { padding: 0 12px; }
+  #week-label { min-width: 110px; font-size: .75rem; }
+  main { padding: 16px 10px; }
+  .frow, .stub-row { grid-template-columns: 1fr; }
+  .slot { min-height: 48px; }
+  .basket-footer { flex-direction: column; align-items: stretch; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     SETUP SCREEN
+══════════════════════════════════════════════════ -->
+<div id="setup">
+  <div class="setup-head">
+    <h1>Space Hire</h1>
+    <p>Toynbee Studios · 28 Commercial Street, London E1 6AB</p>
+  </div>
+
+  <div class="notice">🧪 Stripe is in <strong>test mode</strong> — no real payments will be taken</div>
+
+  <div class="f">
+    <label>Apps Script Web App URL</label>
+    <input id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec" oninput="clearTestResult()">
+    <small>
+      In Apps Script: <strong>Deploy → New deployment → Web app</strong><br>
+      Execute as: <em>Me</em> &nbsp;·&nbsp; Access: <em>Anyone</em> (not "Anyone with Google account")<br>
+      Copy the <strong>/exec</strong> URL and paste it here.
+    </small>
+  </div>
+  <div class="test-row">
+    <button class="btn btn-ghost btn-sm" onclick="testConnection()">🔌 Test connection</button>
+    <div id="test-result"></div>
+  </div>
+  <button class="btn btn-fill btn-full" onclick="saveSetup()">Open booking calendar →</button>
+
+  <details>
+    <summary>📋 Setup guide</summary>
+    <div class="guide">
+      <strong>1.</strong> Open a Google Sheet · <em>Extensions → Apps Script</em><br>
+      <strong>2.</strong> Replace all code with <code>Code.gs</code><br>
+      <strong>3.</strong> Run <code>setupAvailabilitySheet()</code> once to create data<br>
+      <strong>4.</strong> Deploy → New deployment → Web app · Execute as <strong>Me</strong> · Access <strong>Anyone</strong><br>
+      <strong>5.</strong> Copy the /exec URL, paste above, test, then launch<br>
+      <strong>6.</strong> Add a 5-min trigger on <code>releaseExpiredHolds</code><br><br>
+      <strong>When you get Stripe:</strong> set <code>STRIPE_MODE = 'live'</code> + secret key in Code.gs, redeploy.
+    </div>
+  </details>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     APP  (header + grid)
+══════════════════════════════════════════════════ -->
+<div id="app">
+  <header class="site-header">
+    <a class="site-logo" href="#"><em>Toynbee</em> Studios</a>
+    <div class="header-right">
+      <div class="week-nav">
+        <button id="btn-prev" disabled title="Previous week">‹</button>
+        <div id="week-label">—</div>
+        <button id="btn-next" title="Next week">›</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openSetup()" style="display:none" id="settings-btn">Settings</button>
+    </div>
+  </header>
+
+  <main id="main-grid">
+    <h1 class="page-title">Spaces for hire</h1>
+    <p class="page-sub">Select one or more half-day sessions below — morning (8am–1pm) or afternoon (1pm–6pm)</p>
+
+    <div class="legend">
+      <div class="li"><div class="dot d-av"></div> Available</div>
+      <div class="li"><div class="dot d-sel"></div> Selected</div>
+      <div class="li"><div class="dot d-ho"></div> On hold</div>
+      <div class="li"><div class="dot d-bk"></div> Booked</div>
+      <div id="test-legend" style="margin-left:auto;font-size:.78rem;font-weight:600;color:var(--amber);background:var(--amber-bg);padding:4px 10px;border:1px solid var(--amber)">🧪 Test mode</div>
+    </div>
+
+    <div id="loading"><div class="spinner"></div>Loading availability…</div>
+    <div class="grid-wrap" id="grid-wrap" style="display:none">
+      <table id="tbl">
+        <thead id="tbl-head"></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     BASKET  — sticky bottom bar
+══════════════════════════════════════════════════ -->
+<div id="basket">
+  <div class="basket-header">
+    <h3>Your selection <span class="basket-count" id="basket-count">0</span></h3>
+    <button class="basket-clear" onclick="clearBasket()">Clear all</button>
+  </div>
+  <div class="basket-items" id="basket-items"></div>
+  <div class="basket-footer">
+    <div class="basket-total">Total: <span id="basket-total">£0.00</span></div>
+    <button class="btn btn-fill" onclick="goToCheckout()">Pay Now →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     CHECKOUT SCREEN  (name / email)
+══════════════════════════════════════════════════ -->
+<div id="checkout-screen" class="screen">
+  <button class="back-link" onclick="backToGrid()">← Back to calendar</button>
+  <div class="screen-head">
+    <h2>Your details</h2>
+    <p>Please confirm who is making the booking</p>
+  </div>
+
+  <table class="order-table" id="order-summary"></table>
+
+  <div class="frow">
+    <div class="f"><label>First name</label><input id="g-first" autocomplete="given-name" placeholder="Jane"></div>
+    <div class="f"><label>Last name</label> <input id="g-last"  autocomplete="family-name" placeholder="Smith"></div>
+  </div>
+  <div class="f"><label>Email address</label><input id="g-email" type="email" autocomplete="email" placeholder="jane@example.com"></div>
+  <div class="f"><label>Organisation <span style="font-weight:400;text-transform:none">(optional)</span></label><input id="g-org" placeholder="Company or personal"></div>
+
+  <button class="btn btn-fill btn-full" onclick="goToTerms()">Continue to Terms &amp; Conditions →</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TERMS & CONDITIONS SCREEN
+══════════════════════════════════════════════════ -->
+<div id="terms-screen" class="screen">
+  <button class="back-link" onclick="showScreen('checkout-screen')">← Back to your details</button>
+  <div class="screen-head">
+    <h2>Terms &amp; Conditions</h2>
+    <p>Please read and agree before proceeding to payment</p>
+  </div>
+
+  <div class="terms-body">
+    <h4>1. Booking &amp; Confirmation</h4>
+    Your booking is not confirmed until full payment has been received. A booking confirmation with reference number will be sent to your email address. Toynbee Studios reserves the right to decline any booking at its discretion.
+
+    <h4>2. Cancellation Policy</h4>
+    Cancellations made more than 14 days before the booking date will receive a full refund. Cancellations made 7–14 days in advance will receive a 50% refund. No refund will be given for cancellations made less than 7 days before the booking date. All cancellations must be confirmed in writing to spaces@toynbeestudios.org.uk.
+
+    <h4>3. Use of Space</h4>
+    Hirers are responsible for leaving the space in the condition in which it was found. Any damage to equipment, furniture or the building will be charged to the hirer. Spaces must be vacated promptly at the end of the hired period. Noise levels must not disturb other users of the building.
+
+    <h4>4. Capacity &amp; Health and Safety</h4>
+    Hirers must not exceed the stated capacity of the space at any time. All hirers are responsible for ensuring the safety of their participants and must comply with fire safety procedures displayed in each space.
+
+    <h4>5. Equipment &amp; Technical</h4>
+    Basic technical equipment is included in the hire fee where indicated. Additional technical support must be arranged in advance and may incur additional charges. Hirers bring their own equipment at their own risk.
+
+    <h4>6. Catering &amp; Refreshments</h4>
+    Hirers may bring their own refreshments but must remove all food waste at the end of the hire period. Hot food preparation is not permitted unless the kitchen has been booked separately.
+
+    <h4>7. Liability</h4>
+    Toynbee Studios / Artsadmin accepts no liability for loss or damage to property belonging to the hirer or their guests. Hirers are strongly advised to arrange their own public liability insurance.
+
+    <h4>8. Data Protection</h4>
+    Your personal data will be held in accordance with our Privacy Policy and used solely for the purpose of administering your booking. We will not share your data with third parties except as required by law.
+  </div>
+
+  <label class="agree-row">
+    <input type="checkbox" id="agree-chk" onchange="updateAgreeBtn()">
+    <span>I have read and agree to the Terms &amp; Conditions of hire</span>
+  </label>
+
+  <button class="btn btn-fill btn-full" id="agree-btn" onclick="goToPayment()" disabled>
+    Agree &amp; Continue to Payment →
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAYMENT SCREEN
+══════════════════════════════════════════════════ -->
+<div id="payment-screen" class="screen">
+  <button class="back-link" onclick="showScreen('terms-screen')">← Back to Terms &amp; Conditions</button>
+  <div class="screen-head">
+    <h2>Payment</h2>
+    <p>Complete your payment to confirm all selected spaces</p>
+  </div>
+
+  <table class="order-table" id="payment-summary"></table>
+
+  <!-- Stub payment -->
+  <div class="stub-box" id="stub-payment">
+    <p>🧪 Test mode — enter any values, nothing is charged</p>
+    <input id="stub-card" placeholder="Card number  (e.g. 4242 4242 4242 4242)" maxlength="19" oninput="fmtCard(this)">
+    <div class="stub-row">
+      <input id="stub-exp" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)">
+      <input id="stub-cvc" placeholder="CVC" maxlength="4">
+    </div>
+  </div>
+
+  <!-- Real Stripe Elements -->
+  <div id="stripe-element" style="display:none"></div>
+
+  <div id="pay-msg"></div>
+  <button class="btn btn-fill btn-full" id="pay-btn" onclick="submitPayment()">Confirm &amp; Pay</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SUCCESS SCREEN
+══════════════════════════════════════════════════ -->
+<div id="success-screen" class="screen">
+  <div class="screen-head">
+    <h2>Booking confirmed</h2>
+    <p>Thank you — your spaces are reserved</p>
+  </div>
+  <div class="success-icon">✅</div>
+  <div class="ref-box" id="success-detail"></div>
+  <button class="btn btn-fill" onclick="backToGrid(); loadSlots();">Make another booking</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════ */
+var LS = 'rb4_cfg';
+var CFG = { url: '' };
+
+function saveSetup() {
+  var url = document.getElementById('cfg-url').value.trim();
+  if (!url) { toast('Please paste your Apps Script web app URL.'); return; }
+  CFG.url = normaliseUrl(url);
+  localStorage.setItem(LS, JSON.stringify(CFG));
+  boot();
+}
+function openSetup() { showOnlyId('setup'); }
+function loadCfg() {
+  try { var s = localStorage.getItem(LS); if (s) CFG = JSON.parse(s); } catch(_) {}
+  return !!CFG.url;
+}
+function normaliseUrl(url) {
+  try { var u = new URL(url); return u.origin + u.pathname.replace(/\/$/, ''); } catch(_) { return url; }
+}
+function clearTestResult() { document.getElementById('test-result').innerHTML = ''; }
+async function testConnection() {
+  var url = document.getElementById('cfg-url').value.trim();
+  if (!url) { setTestResult('mid','Paste a URL first.'); return; }
+  setTestResult('mid','⏳ Testing…');
+  var saved = CFG.url;
+  CFG.url = normaliseUrl(url);
+  try {
+    var res = await appsCall({ action: 'getAvailability' });
+    var n = (res.slots||[]).length;
+    setTestResult('green','✅ Connected — ' + n + ' slot'+(n===1?'':'s')+' found');
+  } catch(e) {
+    setTestResult('red','❌ ' + e.message);
+  } finally { CFG.url = saved; }
+}
+function setTestResult(col, msg) {
+  var el = document.getElementById('test-result');
+  var c = { green:'var(--green)', red:'var(--red)', mid:'var(--mid)' };
+  el.style.color = c[col]||c.mid; el.textContent = msg;
+}
+
+/* ════════════════════════════════════════════════════
+   JSONP  — all calls via GET, no CORS preflight
+════════════════════════════════════════════════════ */
+function appsCall(params) {
+  return new Promise(function(resolve, reject) {
+    var cb = '_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var timer = setTimeout(function() {
+      cleanup();
+      reject(new Error(
+        'Timed out. Most likely "Who has access" is set to\n' +
+        '"Anyone with Google account" instead of "Anyone".\n\n' +
+        'Fix: Deploy → Manage deployments → edit → Access: Anyone → Deploy.'
+      ));
+    }, 20000);
+    function cleanup() {
+      clearTimeout(timer); delete window[cb];
+      var el = document.getElementById(cb);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+    window[cb] = function(data) {
+      cleanup();
+      if (data && data.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+    var qs  = new URLSearchParams(Object.assign({}, params, { callback: cb })).toString();
+    var tag = document.createElement('script');
+    tag.id  = cb; tag.src = CFG.url + '?' + qs;
+    tag.onerror = function() {
+      cleanup();
+      reject(new Error(
+        'Could not load Apps Script URL.\n\n' +
+        '1. Is the URL correct (ends in /exec)?\n' +
+        '2. Have you deployed the latest Code.gs?\n' +
+        '3. Is Access set to "Anyone" (not "Anyone with Google account")?\n' +
+        '4. Did you authorise the script when first running it?'
+      ));
+    };
+    document.head.appendChild(tag);
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════ */
+var weekOffset  = 0;
+var allSlots    = [];
+var basket      = [];     // array of slot objects the user has selected
+var guestData   = {};     // name/email/org from checkout screen
+var isStubMode  = true;
+var stripeObj   = null;
+var stripeElems = null;
+var piResults   = [];     // payment intent results per basket item
+
+/* ════════════════════════════════════════════════════
+   DATE HELPERS
+════════════════════════════════════════════════════ */
+function weekMonday(off) {
+  var d = new Date(), day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + off * 7); d.setHours(0,0,0,0); return d;
+}
+function addDays(d, n) { var r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function iso(d)    { return d.toISOString().slice(0,10); }
+function disp(d)   { return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function dispDay(d){ return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
+function dispLong(d){ return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function weekDates(){ return Array.from({length:7},function(_,i){return addDays(weekMonday(weekOffset),i);}); }
+function isToday(d){ return iso(d) === iso(new Date()); }
+
+/* ════════════════════════════════════════════════════
+   WEEK NAV
+════════════════════════════════════════════════════ */
+function setWeekLabel() {
+  var dates = weekDates();
+  document.getElementById('week-label').textContent = disp(dates[0]) + ' – ' + disp(dates[6]);
+  document.getElementById('btn-prev').disabled = weekOffset <= 0;
+}
+document.getElementById('btn-prev').addEventListener('click', function() {
+  if (weekOffset > 0) { weekOffset--; setWeekLabel(); renderGrid(); }
+});
+document.getElementById('btn-next').addEventListener('click', function() {
+  weekOffset++; setWeekLabel(); renderGrid();
+});
+
+/* ════════════════════════════════════════════════════
+   RENDER GRID
+════════════════════════════════════════════════════ */
+function getRooms() {
+  var m = [], seen = {};
+  allSlots.forEach(function(s) {
+    if (!seen[s.roomId]) { seen[s.roomId]=true; m.push({roomId:s.roomId,roomName:s.roomName,capacity:s.capacity}); }
+  });
+  return m;
+}
+
+function inBasket(slot) {
+  return basket.some(function(b){ return b._row === slot._row; });
+}
+
+function renderGrid() {
+  var dates = weekDates();
+  var rooms = getRooms();
+  var todayStr = iso(new Date());
+  var head = document.getElementById('tbl-head');
+  var body = document.getElementById('tbl-body');
+
+  /* ── Header row 1: day names ── */
+  var h1 = '<tr><th class="room-th" rowspan="2" style="width:120px">Space</th>';
+  dates.forEach(function(d) {
+    var todayCls = iso(d)===todayStr ? ' today-col' : '';
+    h1 += '<th class="day-th'+todayCls+'" colspan="2">'+dispDay(d)+'</th>';
+  });
+  h1 += '</tr>';
+
+  /* ── Header row 2: AM/PM ── */
+  var h2 = '<tr>';
+  dates.forEach(function(_,i) {
+    var cls = i===0 ? ' day-start' : '';
+    h2 += '<th class="slot-th'+cls+'">AM</th><th class="slot-th">PM</th>';
+  });
+  h2 += '</tr>';
+  head.innerHTML = h1 + h2;
+
+  /* ── Body rows ── */
+  body.innerHTML = rooms.map(function(room) {
+    var cells = '';
+    dates.forEach(function(d, di) {
+      var ds = iso(d);
+      var dayStartCls = di===0 ? ' day-start' : '';
+      ['AM','PM'].forEach(function(s) {
+        var slot = allSlots.filter(function(x){ return x.roomId===room.roomId && x.date===ds && x.slot===s; })[0];
+        if (!slot) {
+          cells += '<td class="slot-cell'+dayStartCls+'"><button class="slot s-na" disabled>—</button></td>';
+          dayStartCls = ''; return;
+        }
+        var st = slot.status;
+        var sel = inBasket(slot);
+        var btn = '';
+        if (st === 'available' && !sel) {
+          btn = '<button class="slot s-av" onclick="toggleSlot(\''+slot.roomId+'\',\''+ds+'\',\''+s+'\')" title="Select '+escHtml(room.roomName)+' · '+ds+' · '+s+'">' +
+            '<span class="sp">£'+slot.price+'</span>' +
+            '<span class="st">'+(s==='AM'?'8am–1pm':'1pm–6pm')+'</span>' +
+            '</button>';
+        } else if (sel) {
+          btn = '<button class="slot s-sel" onclick="toggleSlot(\''+slot.roomId+'\',\''+ds+'\',\''+s+'\')" title="Remove from selection">' +
+            '<span class="ck-icon">✓</span>' +
+            '<span class="sp">£'+slot.price+'</span>' +
+            '</button>';
+        } else if (st === 'hold') {
+          var mins = Math.max(0, Math.round((new Date(slot.holdExpiry) - Date.now()) / 60000));
+          btn = '<button class="slot s-ho" disabled>' +
+            '<span class="st">On Hold</span><span class="stimer">~'+mins+'m</span>' +
+            '</button>';
+        } else {
+          btn = '<button class="slot s-bk" disabled><span class="st">Booked</span></button>';
+        }
+        cells += '<td class="slot-cell'+dayStartCls+'">'+btn+'</td>';
+        dayStartCls = '';
+      });
+    });
+    return '<tr>' +
+      '<td class="room-cell"><div class="rname">'+escHtml(room.roomName)+'</div>' +
+      '<div class="rcap">'+(room.capacity ? 'Up to '+room.capacity+' people' : '')+'</div></td>' +
+      cells + '</tr>';
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════
+   SLOT TOGGLE  (add/remove from basket)
+════════════════════════════════════════════════════ */
+function toggleSlot(roomId, date, slotLabel) {
+  var slot = allSlots.filter(function(s){ return s.roomId===roomId && s.date===date && s.slot===slotLabel; })[0];
+  if (!slot) return;
+
+  if (inBasket(slot)) {
+    // Remove from basket
+    basket = basket.filter(function(b){ return b._row !== slot._row; });
+    renderGrid();
+    renderBasket();
+    return;
+  }
+
+  if (slot.status !== 'available') {
+    toast('This slot is no longer available.'); return;
+  }
+
+  basket.push(slot);
+  renderGrid();
+  renderBasket();
+}
+
+/* ════════════════════════════════════════════════════
+   BASKET RENDER
+════════════════════════════════════════════════════ */
+function renderBasket() {
+  var el = document.getElementById('basket');
+  if (basket.length === 0) {
+    el.classList.remove('open');
+    document.documentElement.style.setProperty('--basket-h', '0px');
+    return;
+  }
+  el.classList.add('open');
+
+  document.getElementById('basket-count').textContent = basket.length;
+
+  var total = basket.reduce(function(s,b){ return s + b.price; }, 0);
+  document.getElementById('basket-total').textContent = '£' + total.toFixed(2);
+
+  document.getElementById('basket-items').innerHTML = basket.map(function(b, i) {
+    var dateObj = new Date(b.date + 'T12:00:00');
+    var dateTxt = dateObj.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    return '<div class="basket-item">' +
+      '<div class="bi-room">'+escHtml(b.roomName)+'</div>' +
+      '<div class="bi-date">'+dateTxt+'</div>' +
+      '<div class="bi-slot">'+b.slot+'</div>' +
+      '<div class="bi-price">£'+b.price.toFixed(2)+'</div>' +
+      '<button class="bi-rm" onclick="removeFromBasket('+i+')" title="Remove">✕</button>' +
+      '</div>';
+  }).join('');
+
+  // Measure height after render
+  requestAnimationFrame(function() {
+    var h = el.offsetHeight;
+    document.documentElement.style.setProperty('--basket-h', h + 'px');
+  });
+}
+
+function removeFromBasket(i) {
+  basket.splice(i, 1);
+  renderGrid();
+  renderBasket();
+}
+
+function clearBasket() {
+  basket = [];
+  renderGrid();
+  renderBasket();
+}
+
+/* ════════════════════════════════════════════════════
+   CHECKOUT FLOW
+════════════════════════════════════════════════════ */
+function goToCheckout() {
+  if (basket.length === 0) { toast('No slots selected.'); return; }
+  renderOrderSummary('order-summary');
+  showScreen('checkout-screen');
+}
+
+function goToTerms() {
+  var first = document.getElementById('g-first').value.trim();
+  var last  = document.getElementById('g-last').value.trim();
+  var email = document.getElementById('g-email').value.trim();
+  if (!first || !last)                             { toast('Please enter your full name.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Please enter a valid email address.'); return; }
+  guestData = { first:first, last:last, email:email, org: document.getElementById('g-org').value.trim() };
+  document.getElementById('agree-chk').checked = false;
+  updateAgreeBtn();
+  showScreen('terms-screen');
+}
+
+function updateAgreeBtn() {
+  document.getElementById('agree-btn').disabled = !document.getElementById('agree-chk').checked;
+}
+
+async function goToPayment() {
+  renderOrderSummary('payment-summary');
+  showScreen('payment-screen');
+  document.getElementById('pay-msg').textContent = '';
+  document.getElementById('pay-btn').disabled = false;
+  document.getElementById('pay-btn').textContent = 'Confirm & Pay — £' + basketTotal().toFixed(2);
+  await initPayment();
+}
+
+function basketTotal() {
+  return basket.reduce(function(s,b){ return s + b.price; }, 0);
+}
+
+function renderOrderSummary(tableId) {
+  var total = basketTotal();
+  var rows = basket.map(function(b) {
+    var dateObj = new Date(b.date + 'T12:00:00');
+    return '<tr>' +
+      '<td>'+escHtml(b.roomName)+'</td>' +
+      '<td>'+dateObj.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+'</td>' +
+      '<td>'+(b.slot==='AM'?'Morning (AM)':'Afternoon (PM)')+'</td>' +
+      '<td style="text-align:right">£'+b.price.toFixed(2)+'</td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById(tableId).innerHTML =
+    '<thead><tr><th>Space</th><th>Date</th><th>Session</th><th style="text-align:right">Price</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody>' +
+    '<tfoot><tr class="total-row"><td colspan="3">Total</td><td style="text-align:right">£'+total.toFixed(2)+'</td></tr></tfoot>';
+}
+
+/* ════════════════════════════════════════════════════
+   PAYMENT INIT  — stub or real Stripe
+════════════════════════════════════════════════════ */
+async function initPayment() {
+  // We create one payment intent for the whole basket total
+  var total = Math.round(basketTotal() * 100);
+  var refs = basket.map(function(b){ return b.roomId+':'+b.date+':'+b.slot; }).join('|');
+  try {
+    var res = await appsCall({
+      action: 'createPaymentIntent',
+      amount: total,
+      refs:   refs,
+      holdRef: 'basket',
+    });
+    isStubMode = !!res.stub;
+    window._piId     = res.paymentIntentId;
+    window._piSecret = res.clientSecret;
+
+    if (!isStubMode && CFG.stripeKey) {
+      document.getElementById('stub-payment').style.display  = 'none';
+      document.getElementById('stripe-element').style.display = 'block';
+      if (!stripeObj) stripeObj = Stripe(CFG.stripeKey);
+      stripeElems = stripeObj.elements({
+        appearance: { theme:'stripe', variables:{ colorPrimary:'#0e0e0e', borderRadius:'0px', fontFamily:'Inter, sans-serif' }},
+        clientSecret: res.clientSecret,
+      });
+      stripeElems.create('payment').mount('#stripe-element');
+    }
+  } catch(e) {
+    document.getElementById('pay-msg').textContent = '⚠ ' + e.message;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   SUBMIT PAYMENT
+════════════════════════════════════════════════════ */
+async function submitPayment() {
+  var btn = document.getElementById('pay-btn');
+  btn.innerHTML = '<span class="spinner-sm"></span> Processing…';
+  btn.disabled = true;
+  document.getElementById('pay-msg').textContent = '';
+
+  var name  = guestData.first + ' ' + guestData.last;
+  var email = guestData.email;
+
+  if (isStubMode) {
+    await delay(1400);
+    await finaliseAllBookings(name, email, window._piId || 'STUB');
+  } else {
+    try {
+      var result = await stripeObj.confirmPayment({
+        elements: stripeElems,
+        confirmParams: {
+          return_url: window.location.href,
+          payment_method_data: { billing_details: { name:name, email:email } },
+        },
+        redirect: 'if_required',
+      });
+      if (result.error) {
+        document.getElementById('pay-msg').textContent = result.error.message;
+        btn.textContent = 'Confirm & Pay — £' + basketTotal().toFixed(2);
+        btn.disabled = false;
+        return;
+      }
+      if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+        await finaliseAllBookings(name, email, result.paymentIntent.id);
+      }
+    } catch(e) {
+      document.getElementById('pay-msg').textContent = e.message;
+      btn.textContent = 'Confirm & Pay — £' + basketTotal().toFixed(2);
+      btn.disabled = false;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   FINALISE — place holds then confirm each slot
+════════════════════════════════════════════════════ */
+async function finaliseAllBookings(guestName, guestEmail, paymentIntentId) {
+  var refs = [];
+  var errors = [];
+
+  // Step 1: place holds for all basket items
+  var held = [];
+  for (var i = 0; i < basket.length; i++) {
+    var slot = basket[i];
+    try {
+      var hRes = await appsCall({ action: 'placeHold', rowNum: slot._row });
+      if (hRes.error) { errors.push(slot.roomName + ' ' + slot.date + ': ' + hRes.error); continue; }
+      held.push({ slot: slot, holdRef: hRes.holdRef });
+    } catch(e) { errors.push(slot.roomName + ': ' + e.message); }
+  }
+
+  // Step 2: confirm each held slot
+  for (var j = 0; j < held.length; j++) {
+    var h = held[j];
+    try {
+      var cRes = await appsCall({
+        action:          'confirmBooking',
+        rowNum:          h.slot._row,
+        paymentIntentId: paymentIntentId,
+        holdRef:         h.holdRef,
+        guestName:       guestName,
+        guestEmail:      guestEmail,
+        amountPaid:      h.slot.price.toFixed(2),
+      });
+      if (cRes.error) { errors.push(h.slot.roomName + ': ' + cRes.error); continue; }
+      refs.push(cRes.bookingRef);
+      // Update local slot state
+      var local = allSlots.filter(function(s){ return s._row === h.slot._row; })[0];
+      if (local) { local.status = 'booked'; local.holdExpiry = ''; local.bookingRef = cRes.bookingRef; }
+    } catch(e) { errors.push(h.slot.roomName + ': ' + e.message); }
+  }
+
+  if (refs.length === 0 && errors.length > 0) {
+    document.getElementById('pay-msg').textContent = 'Booking failed:\n' + errors.join('\n');
+    var btn = document.getElementById('pay-btn');
+    btn.textContent = 'Confirm & Pay — £' + basketTotal().toFixed(2);
+    btn.disabled = false;
+    return;
+  }
+
+  // Show success
+  var bookedBasket = basket.slice();
+  basket = [];
+  renderBasket();
+  showSuccessScreen(bookedBasket, guestName, guestData.first, refs, errors, paymentIntentId);
+}
+
+/* ════════════════════════════════════════════════════
+   SUCCESS SCREEN
+════════════════════════════════════════════════════ */
+function showSuccessScreen(bookedSlots, fullName, firstName, refs, errors, piId) {
+  var dateObj;
+  var rows = bookedSlots.map(function(b, i) {
+    dateObj = new Date(b.date + 'T12:00:00');
+    return '<div style="padding:5px 0;border-bottom:1px solid var(--border)">' +
+      '<strong>'+escHtml(b.roomName)+'</strong> &nbsp;·&nbsp; ' +
+      dateObj.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'}) +
+      ' &nbsp;·&nbsp; ' + (b.slot==='AM'?'Morning':'Afternoon') +
+      (refs[i] ? ' &nbsp;<span style="color:var(--mid);font-size:.8rem">Ref: '+refs[i]+'</span>' : '') +
+      '</div>';
+  }).join('');
+
+  var extra = '';
+  if (errors.length) extra = '<div style="color:var(--amber);margin-top:10px;font-size:.8rem">Some slots could not be confirmed: '+errors.join('; ')+'</div>';
+  if (isStubMode)    extra += '<div style="color:var(--amber);margin-top:10px;font-size:.8rem">🧪 Test booking — no real payment was taken</div>';
+
+  document.getElementById('success-detail').innerHTML =
+    '<div style="margin-bottom:10px">Hi <strong>'+escHtml(firstName)+'</strong> — your booking'+(bookedSlots.length>1?'s are':' is')+' confirmed.</div>' +
+    rows + extra;
+
+  showScreen('success-screen');
+  hide('app');
+}
+
+function backToGrid() {
+  basket = [];
+  renderBasket();
+  show('app');
+  renderGrid();
+  ['checkout-screen','terms-screen','payment-screen','success-screen'].forEach(function(id){
+    document.getElementById(id).classList.remove('open');
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   SCREEN NAVIGATION
+════════════════════════════════════════════════════ */
+function showScreen(id) {
+  ['checkout-screen','terms-screen','payment-screen','success-screen'].forEach(function(sid){
+    document.getElementById(sid).classList.remove('open');
+  });
+  hide('app');
+  document.getElementById(id).classList.add('open');
+  window.scrollTo(0,0);
+}
+function showOnlyId(id) {
+  ['setup','app','checkout-screen','terms-screen','payment-screen','success-screen'].forEach(function(sid){
+    var el = document.getElementById(sid);
+    if (!el) return;
+    el.style.display = sid===id ? 'block' : 'none';
+    el.classList.remove('open');
+    if (sid===id && (id.endsWith('-screen'))) el.classList.add('open');
+  });
+}
+
+/* ════════════════════════════════════════════════════
+   STUB CARD FORMATTERS
+════════════════════════════════════════════════════ */
+function fmtCard(el) {
+  var v = el.value.replace(/\D/g,'').slice(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function fmtExp(el) {
+  var v = el.value.replace(/\D/g,'').slice(0,4);
+  if (v.length >= 3) v = v.slice(0,2) + ' / ' + v.slice(2);
+  el.value = v;
+}
+
+/* ════════════════════════════════════════════════════
+   LOAD SLOTS
+════════════════════════════════════════════════════ */
+async function loadSlots() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('grid-wrap').style.display = 'none';
+  try {
+    var res = await appsCall({ action: 'getAvailability' });
+    allSlots = res.slots || [];
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('grid-wrap').style.display = 'block';
+    renderGrid();
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:var(--red);font-weight:600;text-align:left;max-width:460px">⚠ Could not load availability</div>' +
+      '<div style="color:var(--mid);font-size:.82rem;margin-top:10px;text-align:left;white-space:pre-wrap;line-height:1.7;max-width:460px">'+escHtml(e.message)+'</div>' +
+      '<button class="btn btn-ghost btn-sm" style="margin-top:16px" onclick="loadSlots()">↺ Retry</button>';
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   UTILITIES
+════════════════════════════════════════════════════ */
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 3800);
+}
+function delay(ms) { return new Promise(function(r){ setTimeout(r,ms); }); }
+
+/* ════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════ */
+function boot() {
+  showOnlyId('app');
+  show('app');
+  setWeekLabel();
+  loadSlots();
+  setInterval(function() {
+    var anyScreen = ['checkout-screen','terms-screen','payment-screen','success-screen'].some(function(id){
+      return document.getElementById(id).classList.contains('open');
+    });
+    if (!anyScreen) loadSlots();
+  }, 90000);
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  if (loadCfg()) {
+    document.getElementById('cfg-url').value = CFG.url || '';
+    boot();
+  }
+});
+</script>
+</body>
+</html>
