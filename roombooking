@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room Booking</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+:root {
+  --bg:      #F4F1EA;
+  --surface: #FFFFFF;
+  --ink:     #111111;
+  --muted:   #6B6860;
+  --accent:  #E8380D;
+  --go:      #007A50;
+  --go-bg:   #D2F0E3;
+  --hold:    #B56800;
+  --hold-bg: #FDEECB;
+  --booked:  #B00020;
+  --bk-bg:   #FDDDE2;
+  --border:  #DEDAD2;
+  --r:       10px;
+  --sh:      0 2px 16px rgba(0,0,0,.07);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+
+/* ── SETUP PANEL ─────────────────────────────────────── */
+#setup{max-width:560px;margin:48px auto;background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:36px}
+#setup h1{font-size:1.55rem;font-weight:700;margin-bottom:6px}
+#setup .sub{color:var(--muted);font-size:.9rem;margin-bottom:28px;line-height:1.6}
+.f{margin-bottom:16px}
+.f label{display:block;font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;color:var(--muted)}
+.f input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:var(--r);font:inherit;font-size:.95rem;background:var(--bg);transition:border-color .15s}
+.f input:focus{outline:none;border-color:var(--accent)}
+.f small{display:block;color:var(--muted);font-size:.78rem;margin-top:5px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 24px;border:none;border-radius:var(--r);font:inherit;font-weight:700;font-size:.95rem;cursor:pointer;transition:opacity .15s,transform .1s;width:100%}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{opacity:.88}
+.btn-accent:active{transform:scale(.98)}
+.btn-ghost{background:transparent;border:2px solid var(--border);color:var(--ink);width:auto;font-size:.82rem;padding:7px 14px}
+.btn-ghost:hover{border-color:var(--ink)}
+
+/* ── APP SHELL ───────────────────────────────────────── */
+#app{display:none}
+header{background:var(--ink);color:#fff;height:58px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.logo{font-family:'Space Mono',monospace;font-weight:700;font-size:1.05rem;letter-spacing:-.5px}
+.logo em{color:var(--accent);font-style:normal}
+.week-nav{display:flex;align-items:center;gap:8px;background:#fff1;border-radius:999px;padding:4px 14px}
+.week-nav button{background:none;border:none;color:#fff;cursor:pointer;font-size:1.3rem;line-height:1;padding:2px 5px;border-radius:5px;transition:background .15s}
+.week-nav button:hover{background:#fff2}
+.week-nav button:disabled{opacity:.3;cursor:not-allowed}
+#week-label{color:#fff;font-weight:600;font-size:.85rem;min-width:156px;text-align:center}
+main{max-width:1120px;margin:0 auto;padding:24px 14px 64px}
+
+/* ── LEGEND ──────────────────────────────────────────── */
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:18px;align-items:center}
+.li{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:500}
+.dot{width:13px;height:13px;border-radius:3px;flex-shrink:0}
+.d-av{background:var(--go)}
+.d-ho{background:var(--hold)}
+.d-bk{background:var(--booked)}
+
+/* ── GRID ────────────────────────────────────────────── */
+.grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:separate;border-spacing:0 5px;min-width:700px}
+thead th{font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:2px 8px 10px;text-align:center}
+thead th:first-child{text-align:left;padding-left:16px;min-width:120px}
+tbody tr{background:var(--surface)}
+tbody td{padding:8px 5px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle}
+tbody td:first-child{border-left:1px solid var(--border);border-radius:var(--r) 0 0 var(--r);padding-left:14px;min-width:120px}
+tbody td:last-child{border-right:1px solid var(--border);border-radius:0 var(--r) var(--r) 0}
+.rname{font-weight:700;font-size:.9rem;line-height:1.3}
+.rcap{color:var(--muted);font-size:.75rem;margin-top:2px}
+
+/* ── SLOT BUTTON ─────────────────────────────────────── */
+.slot{width:100%;min-height:54px;border-radius:8px;border:2px solid transparent;cursor:pointer;font:inherit;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;transition:transform .12s,box-shadow .12s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:5px 3px;line-height:1.25}
+.slot:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.slot:active:not(:disabled){transform:scale(.97)}
+.s-av{background:var(--go-bg);color:var(--go);border-color:var(--go)}
+.s-ho{background:var(--hold-bg);color:var(--hold);border-color:var(--hold);cursor:not-allowed}
+.s-bk{background:var(--bk-bg);color:var(--booked);border-color:var(--booked);cursor:not-allowed}
+.s-na{background:var(--bg);color:var(--border);border-color:var(--border);border-style:dashed;cursor:default}
+.slot .sp{font-size:.9rem;font-weight:800}
+.slot .st{font-size:.67rem;font-weight:500;opacity:.75}
+.slot .stimer{font-size:.65rem;font-weight:600;letter-spacing:.02em}
+
+/* ── MODAL ───────────────────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:14px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;padding:32px;max-width:490px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.22);position:relative;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:1.4rem;font-weight:800;margin-bottom:5px}
+.modal .msub{color:var(--muted);font-size:.88rem;margin-bottom:22px}
+.xbtn{position:absolute;top:14px;right:14px;background:var(--bg);border:none;cursor:pointer;width:30px;height:30px;border-radius:50%;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.xbtn:hover{background:var(--border)}
+.summary{background:var(--bg);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;font-size:.88rem;line-height:2.1}
+.summary strong{font-weight:700}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#pay-msg{color:var(--booked);font-size:.82rem;margin-top:8px;min-height:18px}
+#payment-element{margin-bottom:16px}
+.spinner-sm{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+
+/* ── LOADING ─────────────────────────────────────────── */
+#loading{display:none;text-align:center;padding:80px 20px;color:var(--muted)}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .65s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SUCCESS ─────────────────────────────────────────── */
+#success{display:none;text-align:center;max-width:400px;margin:70px auto;background:var(--surface);border-radius:18px;padding:44px 32px;box-shadow:var(--sh)}
+#success .ck{font-size:3.2rem;margin-bottom:14px}
+#success h2{font-size:1.5rem;font-weight:800;margin-bottom:8px}
+#success p{color:var(--muted);margin-bottom:26px;font-size:.9rem;line-height:1.6}
+
+/* ── TOAST ───────────────────────────────────────────── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 22px;border-radius:999px;font-size:.875rem;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1}
+
+@media(max-width:620px){
+  header{padding:0 10px}
+  #week-label{min-width:120px;font-size:.75rem}
+  main{padding:14px 6px 56px}
+  .slot{min-height:46px;font-size:.65rem}
+  .modal{padding:22px 18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SETUP ═══════════ -->
+<div id="setup">
+  <h1>🏢 Room Booking Setup</h1>
+  <div class="sub">Enter your Apps Script web app URL and Stripe publishable key once. Everything else — reading availability, placing holds, confirming bookings — runs through your Google Sheet. No API keys or OAuth flows needed.</div>
+
+  <div class="f">
+    <label>Apps Script Web App URL</label>
+    <input id="cfg-url" placeholder="https://script.google.com/macros/s/AKfy…/exec">
+    <small>In the Apps Script editor: <strong>Deploy → New deployment → Web app</strong> · Execute as: <em>Me</em> · Access: <em>Anyone</em>. Copy the URL here.</small>
+  </div>
+  <div class="f">
+    <label>Stripe Publishable Key</label>
+    <input id="cfg-stripe" placeholder="pk_live_… or pk_test_…">
+    <small>From your <a href="https://dashboard.stripe.com/apikeys" target="_blank" style="color:var(--accent)">Stripe dashboard</a>. Your Stripe <em>secret</em> key lives only inside Code.gs — never in the browser.</small>
+  </div>
+  <button class="btn btn-accent" onclick="saveSetup()">Launch Booking System →</button>
+
+  <details style="margin-top:28px">
+    <summary style="cursor:pointer;font-weight:700;font-size:.9rem">📋 Five-minute setup guide</summary>
+    <div style="margin-top:12px;padding:16px;background:var(--bg);border-radius:var(--r);font-size:.82rem;color:var(--muted);line-height:1.85">
+      <strong style="color:var(--ink)">1. Create a Google Sheet</strong><br>
+      Open a new Google Sheet. The name doesn't matter — the script uses whichever sheet it's bound to.<br><br>
+      <strong style="color:var(--ink)">2. Open Apps Script</strong><br>
+      In the sheet menu: <em>Extensions → Apps Script</em>. Delete the default code. Paste the entire contents of <code>Code.gs</code> (the other file provided alongside this one).<br><br>
+      <strong style="color:var(--ink)">3. Set your Stripe secret key</strong><br>
+      Near the top of Code.gs, replace <code>sk_live_…</code> with your real Stripe <strong>secret</strong> key.<br><br>
+      <strong style="color:var(--ink)">4. Run setupAvailabilitySheet once</strong><br>
+      In the Apps Script editor, select <code>setupAvailabilitySheet</code> from the function dropdown and click <strong>Run</strong>. Authorise when prompted. This creates the Availability tab with 8 rooms × 14 days × AM+PM slots.<br><br>
+      <strong style="color:var(--ink)">5. Deploy as a Web App</strong><br>
+      <em>Deploy → New deployment → Web app</em>. Set "Execute as" to <strong>Me</strong> and "Who has access" to <strong>Anyone</strong>. Click Deploy, authorise again, and copy the Web App URL.<br><br>
+      <strong style="color:var(--ink)">6. Add the hold-release trigger (recommended)</strong><br>
+      In Apps Script: <em>Triggers (clock icon, left sidebar) → Add Trigger</em>. Function: <code>releaseExpiredHolds</code> · Event source: Time-driven · Type: Minutes timer · Interval: Every 5 minutes.<br><br>
+      <strong style="color:var(--ink)">7. Host this HTML file</strong><br>
+      Drop it on Netlify, GitHub Pages, or any static host. Paste the Web App URL and your Stripe publishable key above — done.
+    </div>
+  </details>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="app">
+  <header>
+    <div class="logo">ROOM<em>BOOK</em></div>
+    <div class="week-nav">
+      <button id="btn-prev" title="Previous week" disabled>‹</button>
+      <div id="week-label">—</div>
+      <button id="btn-next" title="Next week">›</button>
+    </div>
+    <button class="btn btn-ghost" onclick="openSetup()" style="color:#fff;border-color:#fff3">⚙ Settings</button>
+  </header>
+
+  <main>
+    <div class="legend">
+      <div class="li"><div class="dot d-av"></div>Available — click to book</div>
+      <div class="li"><div class="dot d-ho"></div>On hold · releases in 10 min</div>
+      <div class="li"><div class="dot d-bk"></div>Booked</div>
+    </div>
+    <div id="loading"><div class="spinner"></div>Loading rooms…</div>
+    <div class="grid-wrap">
+      <table id="tbl" style="display:none">
+        <thead id="tbl-head"></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════ BOOKING MODAL ═══════════ -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="xbtn" onclick="closeModal()" title="Cancel">✕</button>
+    <h2>Book this Room</h2>
+    <div class="msub">Fill in your details and pay to confirm your half-day slot.</div>
+    <div class="summary" id="bk-summary"></div>
+    <div class="frow">
+      <div class="f"><label>First name</label><input id="g-first" autocomplete="given-name" placeholder="Jane"></div>
+      <div class="f"><label>Last name</label><input id="g-last" autocomplete="family-name" placeholder="Smith"></div>
+    </div>
+    <div class="f"><label>Email</label><input id="g-email" type="email" autocomplete="email" placeholder="jane@example.com"></div>
+    <div id="payment-element"></div>
+    <div id="pay-msg"></div>
+    <button class="btn btn-accent" id="pay-btn" onclick="submitPayment()">Pay &amp; Confirm Booking</button>
+  </div>
+</div>
+
+<!-- ═══════════ SUCCESS ═══════════ -->
+<div id="success">
+  <div class="ck">✅</div>
+  <h2>You're booked!</h2>
+  <p id="success-detail"></p>
+  <button class="btn btn-accent" style="margin-bottom:12px" onclick="backToGrid()">Book Another Room</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CONFIG  — saved to localStorage
+══════════════════════════════════════════════════════ */
+const LS_KEY = 'rb2_cfg';
+let CFG = { url: '', stripe: '' };
+
+function saveSetup() {
+  const url    = document.getElementById('cfg-url').value.trim();
+  const stripe = document.getElementById('cfg-stripe').value.trim();
+  if (!url)    { toast('Please enter your Apps Script web app URL.'); return; }
+  if (!stripe) { toast('Please enter your Stripe publishable key.'); return; }
+  CFG = { url, stripe };
+  localStorage.setItem(LS_KEY, JSON.stringify(CFG));
+  boot();
+}
+
+function openSetup() {
+  document.getElementById('app').style.display     = 'none';
+  document.getElementById('success').style.display = 'none';
+  document.getElementById('setup').style.display   = 'block';
+}
+
+function loadCfg() {
+  try { const s = localStorage.getItem(LS_KEY); if (s) CFG = JSON.parse(s); } catch(_){}
+  return !!(CFG && CFG.url && CFG.stripe);
+}
+
+/* ══════════════════════════════════════════════════════
+   APPS SCRIPT  API  CALLS
+   All reads and writes go through the deployed web app.
+══════════════════════════════════════════════════════ */
+async function appsGet(params) {
+  const qs  = new URLSearchParams(params).toString();
+  const res = await fetch(CFG.url + '?' + qs);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const txt = await res.text();
+  try { return JSON.parse(txt); }
+  catch(_) { throw new Error('Unexpected response: ' + txt.slice(0, 200)); }
+}
+
+async function appsPost(body) {
+  const res = await fetch(CFG.url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const txt = await res.text();
+  try { return JSON.parse(txt); }
+  catch(_) { throw new Error('Unexpected response: ' + txt.slice(0, 200)); }
+}
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+let weekOffset  = 0;
+let allSlots    = [];
+let stripeObj   = null;
+let stripeElems = null;
+let currentSlot = null;
+
+/* ══════════════════════════════════════════════════════
+   DATE  HELPERS
+══════════════════════════════════════════════════════ */
+function weekMonday(offset) {
+  const d = new Date();
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + offset * 7);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+const addDays  = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+const isoDate  = d => d.toISOString().slice(0, 10);
+const dispDate = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+const dispFull = d => d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+
+function weekDates() {
+  return Array.from({ length: 7 }, (_, i) => addDays(weekMonday(weekOffset), i));
+}
+
+/* ══════════════════════════════════════════════════════
+   WEEK  NAVIGATION
+══════════════════════════════════════════════════════ */
+function setWeekLabel() {
+  const dates = weekDates();
+  document.getElementById('week-label').textContent =
+    dispDate(dates[0]) + ' – ' + dispDate(dates[6]);
+  document.getElementById('btn-prev').disabled = weekOffset <= 0;
+}
+
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if (weekOffset > 0) { weekOffset--; setWeekLabel(); renderGrid(); }
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  weekOffset++; setWeekLabel(); renderGrid();
+});
+
+/* ══════════════════════════════════════════════════════
+   GRID  RENDER
+══════════════════════════════════════════════════════ */
+function getRooms() {
+  const m = new Map();
+  allSlots.forEach(s => {
+    if (!m.has(s.roomId)) m.set(s.roomId, { roomId: s.roomId, roomName: s.roomName, capacity: s.capacity });
+  });
+  return [...m.values()];
+}
+
+function renderGrid() {
+  const dates = weekDates();
+  const rooms = getRooms();
+  const head  = document.getElementById('tbl-head');
+  const body  = document.getElementById('tbl-body');
+
+  head.innerHTML =
+    '<tr><th>Room</th>' +
+    dates.map(d => `<th colspan="2">${dispFull(d)}</th>`).join('') +
+    '</tr><tr><th></th>' +
+    dates.map(() => '<th style="font-size:.67rem;padding-bottom:8px">AM</th><th style="font-size:.67rem;padding-bottom:8px">PM</th>').join('') +
+    '</tr>';
+
+  body.innerHTML = rooms.map(room => {
+    const cells = dates.map(d => {
+      const ds = isoDate(d);
+      return ['AM','PM'].map(s => {
+        const slot = allSlots.find(x => x.roomId===room.roomId && x.date===ds && x.slot===s);
+        if (!slot) {
+          return '<td><button class="slot s-na" disabled>—</button></td>';
+        }
+        const st = slot.status;
+        if (st === 'available') {
+          return `<td><button class="slot s-av"
+              onclick="clickSlot('${slot.roomId}','${ds}','${s}')"
+              title="Book ${room.roomName} · ${ds} · ${s}">
+              <span class="sp">£${slot.price}</span>
+              <span class="st">${s==='AM' ? '8am–1pm' : '1pm–6pm'}</span>
+            </button></td>`;
+        }
+        if (st === 'hold') {
+          const mins = Math.max(0, Math.round((new Date(slot.holdExpiry) - Date.now()) / 60000));
+          return `<td><button class="slot s-ho" disabled title="On hold">
+              <span class="st">On Hold</span>
+              <span class="stimer">~${mins}m left</span>
+            </button></td>`;
+        }
+        // booked
+        return `<td><button class="slot s-bk" disabled title="Booked">
+            <span class="st">Booked</span>
+          </button></td>`;
+      }).join('');
+    }).join('');
+
+    return `<tr>
+      <td>
+        <div class="rname">${room.roomName}</div>
+        <div class="rcap">${room.capacity ? 'Up to ' + room.capacity + ' people' : ''}</div>
+      </td>
+      ${cells}
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════════
+   SLOT  CLICK  →  HOLD  →  OPEN  MODAL
+══════════════════════════════════════════════════════ */
+async function clickSlot(roomId, date, slotLabel) {
+  const slot = allSlots.find(s => s.roomId===roomId && s.date===date && s.slot===slotLabel);
+  if (!slot || slot.status !== 'available') {
+    toast('This slot just became unavailable — please try another.'); return;
+  }
+
+  // Optimistic local update — show it as held immediately
+  slot.status = 'hold';
+  slot.holdExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  renderGrid();
+
+  // Write hold to the sheet via Apps Script
+  try {
+    const res = await appsPost({ action: 'placeHold', rowNum: slot._row });
+    if (res.error) {
+      slot.status = 'available'; slot.holdExpiry = '';
+      renderGrid();
+      toast(res.error); return;
+    }
+    slot.holdExpiry = res.holdExpiry;
+    slot.bookingRef = res.holdRef;
+    currentSlot = { ...slot, holdRef: res.holdRef };
+  } catch(e) {
+    slot.status = 'available'; slot.holdExpiry = '';
+    renderGrid();
+    toast('Could not reserve slot: ' + e.message); return;
+  }
+
+  openModal();
+}
+
+/* ══════════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════════ */
+function openModal() {
+  const s = currentSlot;
+  const dateObj = new Date(s.date + 'T12:00:00');
+  document.getElementById('bk-summary').innerHTML = `
+    <div><strong>Room:</strong> ${s.roomName}</div>
+    <div><strong>Date:</strong> ${dateObj.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div><strong>Session:</strong> ${s.slot==='AM' ? 'Morning — 8am to 1pm' : 'Afternoon — 1pm to 6pm'}</div>
+    <div><strong>Price:</strong> £${s.price.toFixed(2)}</div>
+  `;
+  ['g-first','g-last','g-email'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pay-msg').textContent = '';
+  document.getElementById('pay-btn').disabled = false;
+  document.getElementById('pay-btn').innerHTML = `Pay £${s.price.toFixed(2)} &amp; Confirm`;
+  document.getElementById('modal-overlay').classList.add('open');
+  initStripe(s);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  // Release the hold since the user cancelled
+  if (currentSlot) {
+    appsPost({ action: 'releaseHold', rowNum: currentSlot._row, holdRef: currentSlot.holdRef }).catch(() => {});
+    const local = allSlots.find(s => s._row === currentSlot._row);
+    if (local) { local.status = 'available'; local.holdExpiry = ''; local.bookingRef = ''; }
+    currentSlot = null;
+    renderGrid();
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   STRIPE  PAYMENT
+══════════════════════════════════════════════════════ */
+async function initStripe(slot) {
+  document.getElementById('payment-element').innerHTML =
+    '<div style="text-align:center;padding:20px 0"><div class="spinner"></div>Preparing payment…</div>';
+  try {
+    // Apps Script calls Stripe server-side and returns the client secret
+    const res = await appsPost({
+      action:   'createPaymentIntent',
+      amount:   Math.round(slot.price * 100),
+      roomId:   slot.roomId,
+      roomName: slot.roomName,
+      date:     slot.date,
+      slot:     slot.slot,
+      holdRef:  slot.holdRef,
+    });
+    if (res.error) throw new Error(res.error);
+
+    if (!stripeObj) stripeObj = Stripe(CFG.stripe);
+    stripeElems = stripeObj.elements({
+      appearance: { theme: 'stripe', variables: { colorPrimary: '#E8380D', borderRadius: '8px', fontFamily: 'DM Sans, sans-serif' } },
+      clientSecret: res.clientSecret,
+    });
+    document.getElementById('payment-element').innerHTML = '';
+    stripeElems.create('payment').mount('#payment-element');
+    currentSlot._clientSecret    = res.clientSecret;
+    currentSlot._paymentIntentId = res.paymentIntentId;
+  } catch(e) {
+    document.getElementById('payment-element').innerHTML = '';
+    document.getElementById('pay-msg').textContent = '⚠ Could not load payment form: ' + e.message;
+  }
+}
+
+async function submitPayment() {
+  const first = document.getElementById('g-first').value.trim();
+  const last  = document.getElementById('g-last').value.trim();
+  const email = document.getElementById('g-email').value.trim();
+
+  if (!first || !last)                              { setPayMsg('Please enter your full name.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setPayMsg('Please enter a valid email address.'); return; }
+  if (!currentSlot?._clientSecret)                 { setPayMsg('Payment form not ready — please wait a moment.'); return; }
+
+  const btn = document.getElementById('pay-btn');
+  btn.innerHTML = '<span class="spinner-sm"></span> Processing…';
+  btn.disabled  = true;
+  setPayMsg('');
+
+  try {
+    const { error, paymentIntent } = await stripeObj.confirmPayment({
+      elements: stripeElems,
+      confirmParams: {
+        return_url: window.location.href,
+        payment_method_data: { billing_details: { name: first + ' ' + last, email } },
+      },
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      setPayMsg(error.message);
+      btn.innerHTML = `Pay £${currentSlot.price.toFixed(2)} &amp; Confirm`;
+      btn.disabled  = false;
+      return;
+    }
+
+    if (paymentIntent?.status === 'succeeded') {
+      // Verify with Stripe server-side and write booking row to sheet
+      const res = await appsPost({
+        action:          'confirmBooking',
+        rowNum:          currentSlot._row,
+        paymentIntentId: paymentIntent.id,
+        holdRef:         currentSlot.holdRef,
+        guestName:       first + ' ' + last,
+        guestEmail:      email,
+      });
+      if (res.error) {
+        setPayMsg('⚠ Payment taken but sheet write failed: ' + res.error + ' — Stripe ref: ' + paymentIntent.id);
+        return;
+      }
+      // Update local cache
+      const local = allSlots.find(s => s._row === currentSlot._row);
+      if (local) { local.status = 'booked'; local.holdExpiry = ''; local.bookingRef = res.bookingRef; }
+
+      document.getElementById('modal-overlay').classList.remove('open');
+      showSuccess(currentSlot, first, res.bookingRef);
+      currentSlot = null;
+    }
+  } catch(e) {
+    setPayMsg(e.message);
+    btn.innerHTML = `Pay £${currentSlot.price.toFixed(2)} &amp; Confirm`;
+    btn.disabled  = false;
+  }
+}
+
+function setPayMsg(msg) { document.getElementById('pay-msg').textContent = msg; }
+
+/* ══════════════════════════════════════════════════════
+   SUCCESS
+══════════════════════════════════════════════════════ */
+function showSuccess(slot, firstName, ref) {
+  document.getElementById('app').style.display     = 'none';
+  const dateObj = new Date(slot.date + 'T12:00:00');
+  document.getElementById('success-detail').innerHTML =
+    `Hi ${firstName}!<br><br>
+     <strong>${slot.roomName}</strong><br>
+     ${dateObj.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}<br>
+     ${slot.slot === 'AM' ? 'Morning — 8am to 1pm' : 'Afternoon — 1pm to 6pm'}<br><br>
+     Booking reference: <strong>${ref}</strong>`;
+  document.getElementById('success').style.display = 'block';
+}
+
+function backToGrid() {
+  document.getElementById('success').style.display = 'none';
+  document.getElementById('app').style.display     = 'block';
+  loadSlots();
+}
+
+/* ══════════════════════════════════════════════════════
+   LOAD  SLOTS  (reads from Apps Script → Sheet)
+══════════════════════════════════════════════════════ */
+async function loadSlots() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('tbl').style.display     = 'none';
+  try {
+    const res = await appsGet({ action: 'getAvailability' });
+    if (res.error) throw new Error(res.error);
+    allSlots = res.slots || [];
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('tbl').style.display     = 'table';
+    renderGrid();
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      `<div style="color:var(--booked);font-weight:600;padding:0 20px">
+        ⚠ Could not load availability<br>
+        <small style="color:var(--muted);font-weight:400">${e.message}</small>
+       </div>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════ */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3800);
+}
+
+/* ══════════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════════ */
+function boot() {
+  document.getElementById('setup').style.display   = 'none';
+  document.getElementById('success').style.display = 'none';
+  document.getElementById('app').style.display     = 'block';
+  setWeekLabel();
+  loadSlots();
+  // Auto-refresh every 90 s (skip if booking modal is open)
+  setInterval(() => {
+    if (!document.getElementById('modal-overlay').classList.contains('open')) loadSlots();
+  }, 90000);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (loadCfg()) {
+    document.getElementById('cfg-url').value    = CFG.url    || '';
+    document.getElementById('cfg-stripe').value = CFG.stripe || '';
+    boot();
+  }
+
+  // Handle Stripe 3-D Secure redirect return
+  const params = new URLSearchParams(window.location.search);
+  const pis    = params.get('payment_intent_client_secret');
+  if (pis && loadCfg()) {
+    if (!stripeObj) stripeObj = Stripe(CFG.stripe);
+    stripeObj.retrievePaymentIntent(pis).then(({ paymentIntent }) => {
+      if (paymentIntent?.status === 'succeeded') {
+        document.getElementById('setup').style.display   = 'none';
+        document.getElementById('app').style.display     = 'none';
+        document.getElementById('success').style.display = 'block';
+        document.getElementById('success-detail').textContent =
+          'Payment confirmed! Stripe reference: ' + paymentIntent.id;
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>
