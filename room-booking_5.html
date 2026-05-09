@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Hire — Toynbee Studios</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  /* Artsadmin brand palette */
+  --bg:        #f9f6ef;   /* Artsadmin cream — exact site background */
+  --white:     #ffffff;
+  --ink:       #111111;
+  --mid:       #5a5650;
+  --border:    #c8c4bb;
+  --brand:     #2d6a4f;   /* Artsadmin forest green — primary brand colour */
+  --brand-dk:  #1b4332;   /* darker green for hover states */
+  --brand-lt:  #d8ede4;   /* light green tint for slot backgrounds */
+  --brand-txt: #f9f6ef;   /* text on green backgrounds */
+  --green:     #2d6a4f;   /* available slots */
+  --green-bg:  #d8ede4;
+  --amber:     #7a4800;
+  --amber-bg:  #fdefd6;
+  --red:       #8b1a1a;
+  --red-bg:    #fce8e8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5}
+a{color:inherit}
+
+/* ═══════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 24px;border:2px solid var(--ink);
+  font:inherit;font-weight:700;font-size:.88rem;letter-spacing:.01em;
+  cursor:pointer;transition:background .13s,color .13s,opacity .13s;
+  text-decoration:none;white-space:nowrap;
+}
+.btn-solid{background:var(--brand);color:var(--white);border-color:var(--brand)}
+.btn-solid:hover{background:var(--brand-dk);border-color:var(--brand-dk)}
+.btn-outline{background:transparent;color:var(--ink);border-color:var(--ink)}
+.btn-outline:hover{background:var(--ink);color:var(--white)}
+.btn-full{width:100%}
+.btn-sm{padding:8px 16px;font-size:.8rem}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* ═══════════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════════ */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-bottom:6px}
+.field input{width:100%;padding:11px 13px;border:1.5px solid var(--border);background:var(--white);font:inherit;font-size:.94rem;transition:border-color .14s}
+.field input:focus{outline:none;border-color:var(--ink)}
+.field small{display:block;color:var(--mid);font-size:.76rem;margin-top:5px;line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ═══════════════════════════════════════════════
+   PAGE VIEWS  — one visible at a time
+   Each view is display:none by default;
+   .view-active makes it display:block
+═══════════════════════════════════════════════ */
+.view{display:none}
+.view.view-active{display:block}
+
+/* ═══════════════════════════════════════════════
+   SETUP VIEW
+═══════════════════════════════════════════════ */
+#view-setup{max-width:540px;margin:52px auto;padding:0 20px 60px;border-top:5px solid var(--brand)}
+.setup-title{font-size:1.7rem;font-weight:800;margin-bottom:4px;color:var(--brand)}
+.setup-sub{color:var(--mid);font-size:.9rem;margin-bottom:26px}
+.notice-bar{background:var(--amber-bg);border-left:3px solid #c07000;padding:10px 14px;font-size:.82rem;font-weight:600;color:var(--amber);margin-bottom:20px}
+.test-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+#test-result{font-size:.82rem;font-weight:600;color:var(--mid)}
+details>summary{cursor:pointer;font-weight:700;font-size:.86rem;margin-top:20px;list-style:none}
+details>summary::-webkit-details-marker{display:none}
+.guide-box{margin-top:8px;padding:14px 16px;background:var(--white);border:1px solid var(--border);font-size:.79rem;color:var(--mid);line-height:1.9}
+
+/* ═══════════════════════════════════════════════
+   CALENDAR VIEW
+═══════════════════════════════════════════════ */
+#view-calendar{padding-bottom:0}
+
+/* sticky header */
+.cal-header{
+  background:var(--brand);border-bottom:2px solid var(--brand-dk);
+  padding:0 22px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:60;
+}
+.cal-logo{font-size:1.05rem;font-weight:800;letter-spacing:-.3px;text-decoration:none;color:var(--white)}
+.cal-logo span{color:rgba(255,255,255,.65)}
+.week-ctrl{display:flex;align-items:center;gap:6px}
+.week-ctrl button{
+  background:none;border:1.5px solid rgba(255,255,255,.45);color:var(--white);
+  cursor:pointer;width:30px;height:30px;
+  font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center;
+  transition:background .12s,border-color .12s;
+}
+.week-ctrl button:hover:not(:disabled){background:var(--brand-dk);color:var(--white);border-color:rgba(255,255,255,.7)}
+.week-ctrl button:disabled{opacity:.28;cursor:default}
+#week-label{font-size:.8rem;font-weight:600;min-width:148px;text-align:center;color:var(--white)}
+
+/* content area — gets bottom padding from JS to avoid basket overlap */
+.cal-body{max-width:1180px;margin:0 auto;padding:24px 18px 32px}
+.cal-title{font-size:1.4rem;font-weight:800;margin-bottom:4px}
+.cal-sub{font-size:.88rem;color:var(--mid);margin-bottom:18px}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:18px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:.79rem;font-weight:600}
+.leg-dot{width:13px;height:13px;flex-shrink:0}
+.leg-dot.av{background:var(--green-bg);border:1.5px solid var(--green)}
+.leg-dot.sel{background:var(--ink)}
+.leg-dot.hold{background:var(--amber-bg);border:1.5px solid var(--amber)}
+.leg-dot.bk{background:var(--red-bg);border:1.5px solid var(--red)}
+.test-pill{margin-left:auto;background:var(--amber-bg);border:1px solid var(--amber);color:var(--amber);font-size:.76rem;font-weight:700;padding:3px 10px}
+
+/* loading */
+#cal-loading{display:none;text-align:center;padding:70px 20px;color:var(--mid)}
+.spin{width:30px;height:30px;border:2.5px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:rot .6s linear infinite;margin:0 auto 12px}
+.spin-sm{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:rot .6s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* grid wrapper */
+.grid-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* TABLE — fixed layout so columns are even */
+#cal-table{
+  width:100%;border-collapse:collapse;
+  min-width:760px;table-layout:fixed;
+}
+
+/* row 1 header: day names */
+.th-day{
+  text-align:center;padding:9px 4px 6px;
+  font-size:.82rem;font-weight:700;
+  border-bottom:2px solid var(--ink);
+  border-left:2px solid var(--ink);
+  background:var(--bg);
+}
+.th-day:first-child{border-left:none}
+.th-day.is-today{background:var(--brand);color:var(--white)}
+
+/* row 2 header: AM / PM */
+.th-ampm{
+  text-align:center;padding:4px 2px 7px;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--mid);border-bottom:1px solid var(--border);
+  border-left:1px solid var(--border);
+}
+.th-ampm.day-start{border-left:2px solid var(--ink)}
+
+/* corner room-name header */
+.th-room-hdr{
+  padding:4px 2px 7px 0;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--mid);border-bottom:1px solid var(--border);
+}
+
+/* room name cell */
+td.td-room{
+  padding:7px 10px 7px 0;border-bottom:1px solid var(--border);
+  vertical-align:middle;min-width:110px;
+}
+.r-name{font-weight:700;font-size:.86rem}
+.r-cap{color:var(--mid);font-size:.72rem;margin-top:1px}
+
+/* slot cell */
+td.td-slot{
+  padding:4px 3px;border-bottom:1px solid var(--border);
+  border-left:1px solid var(--border);vertical-align:middle;
+}
+td.td-slot.day-start{border-left:2px solid var(--ink)}
+
+/* SLOT BUTTON */
+.slot{
+  width:100%;min-height:54px;border:1.5px solid transparent;
+  font:inherit;font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:4px 2px;line-height:1.3;
+  transition:filter .1s,transform .1s;
+}
+.slot:hover:not(:disabled):not(.s-sel){filter:brightness(.92)}
+.slot:active:not(:disabled){transform:scale(.97)}
+.slot .s-price{font-size:.86rem;font-weight:800}
+.slot .s-time{font-size:.63rem;opacity:.75}
+.slot .s-timer{font-size:.61rem;font-weight:600}
+.slot .s-check{font-size:.95rem;line-height:1}
+
+.s-av  {background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.s-sel {background:var(--brand);color:var(--white);border-color:var(--brand-dk)}
+.s-sel:hover{filter:none;background:var(--brand-dk)}
+.s-hold{background:var(--amber-bg);color:var(--amber);border-color:var(--amber);cursor:not-allowed}
+.s-bk  {background:var(--red-bg);color:var(--red);border-color:var(--red);cursor:not-allowed}
+.s-na  {background:transparent;color:var(--border);border:1.5px dashed var(--border);cursor:default}
+
+/* ═══════════════════════════════════════════════
+   BASKET  — fixed bottom bar
+═══════════════════════════════════════════════ */
+#basket-bar{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:80;
+  background:var(--white);border-top:3px solid var(--brand);
+  box-shadow:0 -3px 20px rgba(0,0,0,.10);
+  max-height:52vh;overflow-y:auto;
+}
+#basket-bar.open{display:block}
+
+.basket-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 20px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--white);z-index:2;
+}
+.basket-top-left{display:flex;align-items:center;gap:10px}
+.basket-heading{font-size:1rem;font-weight:800}
+.basket-badge{background:var(--brand);color:var(--white);font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:99px}
+.basket-clear{background:none;border:none;cursor:pointer;font:inherit;font-size:.78rem;color:var(--mid);text-decoration:underline;padding:0}
+.basket-clear:hover{color:var(--ink)}
+
+.basket-list{padding:4px 20px 0}
+.basket-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--border);
+  font-size:.84rem;
+}
+.basket-row:last-child{border-bottom:none}
+.br-room{font-weight:600;flex:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br-date{color:var(--mid);font-size:.79rem;flex:1.4}
+.br-sess{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);width:34px;text-align:center}
+.br-price{font-weight:700;width:52px;text-align:right}
+.br-del{background:none;border:none;cursor:pointer;color:var(--mid);font-size:.95rem;line-height:1;padding:2px 5px;flex-shrink:0}
+.br-del:hover{color:var(--red)}
+
+.basket-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 20px;border-top:1px solid var(--border);
+  position:sticky;bottom:0;background:var(--white);z-index:2;
+  flex-wrap:wrap;
+}
+.basket-total{font-size:1.05rem;font-weight:800}
+.basket-total span{font-size:1.2rem}
+
+/* ═══════════════════════════════════════════════
+   CHECKOUT / TERMS / PAYMENT / SUCCESS  screens
+   All sit inside #view-flow which is a .view
+═══════════════════════════════════════════════ */
+#view-flow{max-width:600px;margin:0 auto;padding:36px 20px 80px}
+
+.flow-back{
+  display:inline-flex;align-items:center;gap:5px;
+  background:none;border:none;font:inherit;font-size:.82rem;
+  color:var(--mid);cursor:pointer;text-decoration:underline;
+  padding:0 0 18px;
+}
+.flow-back:hover{color:var(--brand)}
+
+.flow-head{border-bottom:3px solid var(--brand);padding-bottom:14px;margin-bottom:24px}
+.flow-head h2{font-size:1.55rem;font-weight:800}
+.flow-head p{font-size:.88rem;color:var(--mid);margin-top:4px}
+
+/* step indicator */
+.steps{display:flex;gap:0;margin-bottom:28px;border-bottom:2px solid var(--border)}
+.step-item{flex:1;text-align:center;padding:8px 4px;font-size:.74rem;font-weight:600;color:var(--mid);border-bottom:3px solid transparent;margin-bottom:-2px}
+.step-item.active{color:var(--brand);border-color:var(--brand)}
+.step-item.done{color:var(--brand)}
+
+/* order table */
+.order-tbl{width:100%;border-collapse:collapse;font-size:.87rem;margin-bottom:22px}
+.order-tbl th{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);padding:0 0 8px;text-align:left;border-bottom:2px solid var(--brand)}
+.order-tbl td{padding:10px 0;border-bottom:1px solid var(--border);vertical-align:top}
+.order-tbl tr:last-child td{border:none}
+.order-tbl .trow-total td{padding-top:12px;font-weight:800;font-size:1rem;border-top:2px solid var(--brand)}
+
+/* terms */
+.terms-scroll{background:var(--white);border:1.5px solid var(--border);padding:18px 20px;font-size:.83rem;line-height:1.85;color:var(--mid);max-height:250px;overflow-y:auto;margin-bottom:16px}
+.terms-scroll h4{font-size:.94rem;font-weight:700;color:var(--ink);margin:14px 0 3px}
+.terms-scroll h4:first-child{margin-top:0}
+.agree-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:22px;font-size:.88rem;line-height:1.5}
+.agree-label input{margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:var(--brand);cursor:pointer}
+
+/* stub payment */
+.stub-card-box{background:var(--amber-bg);border:1.5px dashed #c07000;padding:16px 18px;margin-bottom:18px}
+.stub-card-box .stub-label{font-size:.79rem;font-weight:700;color:var(--amber);margin-bottom:12px}
+.stub-card-box input{width:100%;padding:9px 12px;border:1.5px solid #c07000;background:var(--white);font:inherit;font-size:.87rem;margin-bottom:10px}
+.stub-card-box input:last-child{margin-bottom:0}
+.stub-card-box input:focus{outline:none;border-color:var(--ink)}
+.stub-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stub-row input{margin:0!important}
+
+/* real stripe mount */
+#stripe-mount{margin-bottom:18px;display:none}
+
+/* error msg */
+#pay-error{color:var(--red);font-size:.82rem;min-height:18px;margin-bottom:10px;white-space:pre-wrap}
+
+/* success */
+.success-icon{font-size:2.8rem;margin-bottom:12px}
+.conf-table{width:100%;border-collapse:collapse;font-size:.87rem;margin:16px 0 26px}
+.conf-table td{padding:9px 0;border-bottom:1px solid var(--border)}
+.conf-table tr:last-child td{border:none}
+.conf-ref{font-size:.78rem;color:var(--mid)}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--white);
+  padding:10px 22px;font-size:.86rem;font-weight:600;
+  opacity:0;transition:opacity .22s;pointer-events:none;z-index:999;
+  max-width:90vw;text-align:center;
+}
+#toast.on{opacity:1}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media(max-width:640px){
+  .cal-header{padding:0 12px}
+  #week-label{min-width:108px;font-size:.74rem}
+  .cal-body{padding:16px 10px 24px}
+  .slot{min-height:46px;font-size:.62rem}
+  .field-row,.stub-row{grid-template-columns:1fr}
+  .basket-foot{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     VIEW: SETUP
+════════════════════════════════════════════ -->
+<div id="view-setup" class="view view-active">
+  <div class="setup-title">Space Hire</div>
+  <div class="setup-sub">Toynbee Studios · 28 Commercial Street, London E1 6AB</div>
+
+  <div class="notice-bar">🧪 Stripe is in <strong>test mode</strong> — no real payments will be taken</div>
+
+  <div class="field">
+    <label>Apps Script Web App URL</label>
+    <input id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec" oninput="clearTestResult()">
+    <small>
+      Apps Script: <strong>Deploy → New deployment → Web app</strong><br>
+      Execute as: <em>Me</em> · Access: <em>Anyone</em> (not "Anyone with Google account")<br>
+      Copy the <strong>/exec</strong> URL and paste here.
+    </small>
+  </div>
+  <div class="test-row">
+    <button class="btn btn-outline btn-sm" onclick="testConn()">🔌 Test connection</button>
+    <div id="test-result"></div>
+  </div>
+  <button class="btn btn-solid btn-full" onclick="saveSetup()">Open booking calendar →</button>
+
+  <details>
+    <summary>📋 Setup guide</summary>
+    <div class="guide-box">
+      <strong>1.</strong> Open a Google Sheet · <em>Extensions → Apps Script</em><br>
+      <strong>2.</strong> Replace all code with Code.gs · save<br>
+      <strong>3.</strong> Run <code>setupAvailabilitySheet()</code> once to create the data tab<br>
+      <strong>4.</strong> Deploy → New deployment → Web app · Execute as <strong>Me</strong> · Access <strong>Anyone</strong><br>
+      <strong>5.</strong> Copy the /exec URL, paste above, test connection, then launch<br>
+      <strong>6.</strong> Add a 5-min time trigger on <code>releaseExpiredHolds</code><br><br>
+      When you get Stripe: set <code>STRIPE_MODE = 'live'</code> + secret key in Code.gs and redeploy.
+    </div>
+  </details>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VIEW: CALENDAR
+════════════════════════════════════════════ -->
+<div id="view-calendar" class="view">
+  <header class="cal-header">
+    <span class="cal-logo">TOYNBEE <span>STUDIOS</span></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="week-ctrl">
+        <button id="btn-prev" disabled>‹</button>
+        <div id="week-label">—</div>
+        <button id="btn-next">›</button>
+      </div>
+      <button class="btn btn-sm" onclick="goView('view-setup')" style="display:none;background:transparent;border-color:rgba(255,255,255,.5);color:var(--white)" id="btn-settings">Settings</button>
+    </div>
+  </header>
+
+  <div class="cal-body">
+    <div class="cal-title">Spaces for hire</div>
+    <div class="cal-sub">Click a slot to add it to your booking. Select as many as you need.</div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot av"></div>Available</div>
+      <div class="leg-item"><div class="leg-dot sel"></div>Selected</div>
+      <div class="leg-item"><div class="leg-dot hold"></div>On hold</div>
+      <div class="leg-item"><div class="leg-dot bk"></div>Booked</div>
+      <div class="test-pill" id="test-pill">🧪 Test mode</div>
+    </div>
+
+    <div id="cal-loading"><div class="spin"></div>Loading availability…</div>
+
+    <div class="grid-scroll" id="grid-scroll" style="display:none">
+      <table id="cal-table">
+        <thead id="cal-thead"></thead>
+        <tbody id="cal-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     BASKET BAR  (fixed bottom, shown over calendar)
+════════════════════════════════════════════ -->
+<div id="basket-bar">
+  <div class="basket-top">
+    <div class="basket-top-left">
+      <span class="basket-heading">Your selection</span>
+      <span class="basket-badge" id="basket-count">0</span>
+    </div>
+    <button class="basket-clear" onclick="clearBasket()">Clear all</button>
+  </div>
+  <div class="basket-list" id="basket-list"></div>
+  <div class="basket-foot">
+    <div class="basket-total">Total: <span id="basket-total">£0.00</span></div>
+    <button class="btn btn-solid" id="btn-pay-now" onclick="startCheckout()">Pay Now →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VIEW: FLOW  (checkout / terms / payment / success)
+     All steps share this single view container.
+     A .step div is shown/hidden within it.
+════════════════════════════════════════════ -->
+<div id="view-flow" class="view">
+  <div id="flow-inner" style="max-width:600px;margin:0 auto;padding:36px 20px 80px">
+
+    <!-- STEP INDICATOR -->
+    <div class="steps" id="step-indicator">
+      <div class="step-item" id="step-dot-details">1 · Details</div>
+      <div class="step-item" id="step-dot-terms">2 · Terms</div>
+      <div class="step-item" id="step-dot-payment">3 · Payment</div>
+    </div>
+
+    <!-- ── STEP: DETAILS ── -->
+    <div id="step-details" class="flow-step">
+      <button class="flow-back" onclick="backToCalendar()">← Back to calendar</button>
+      <div class="flow-head">
+        <h2>Your details</h2>
+        <p>Tell us who is making this booking</p>
+      </div>
+
+      <table class="order-tbl" id="details-order-tbl"></table>
+
+      <div class="field-row">
+        <div class="field"><label>First name</label><input id="g-first" autocomplete="given-name" placeholder="Jane"></div>
+        <div class="field"><label>Last name</label><input id="g-last" autocomplete="family-name" placeholder="Smith"></div>
+      </div>
+      <div class="field"><label>Email address</label><input id="g-email" type="email" autocomplete="email" placeholder="jane@example.com"></div>
+      <div class="field"><label>Organisation <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label><input id="g-org" placeholder="Company or individual"></div>
+
+      <button class="btn btn-solid btn-full" onclick="submitDetails()">Continue to Terms &amp; Conditions →</button>
+    </div>
+
+    <!-- ── STEP: TERMS ── -->
+    <div id="step-terms" class="flow-step" style="display:none">
+      <button class="flow-back" onclick="goStep('details')">← Back to your details</button>
+      <div class="flow-head">
+        <h2>Terms &amp; Conditions</h2>
+        <p>Please read and agree before proceeding to payment</p>
+      </div>
+
+      <div class="terms-scroll">
+        <h4>1. Booking &amp; Confirmation</h4>
+        Your booking is not confirmed until full payment has been received. A confirmation with your booking reference will be sent to your email address. Toynbee Studios reserves the right to decline any booking at its discretion.
+
+        <h4>2. Cancellation Policy</h4>
+        Cancellations made more than 14 days before the booking date receive a full refund. Cancellations 7–14 days in advance receive a 50% refund. No refund is given for cancellations within 7 days of the booking. All cancellations must be submitted in writing to spaces@toynbeestudios.org.uk.
+
+        <h4>3. Use of Space</h4>
+        Hirers are responsible for leaving the space in the condition in which it was found. Any damage to equipment, furniture or the building will be charged to the hirer. Spaces must be vacated promptly at the end of the hired period. Noise levels must not disturb other users of the building.
+
+        <h4>4. Capacity &amp; Safety</h4>
+        Hirers must not exceed the stated capacity of the space. All hirers are responsible for ensuring the safety of their participants and must comply with fire safety procedures displayed in each space.
+
+        <h4>5. Equipment</h4>
+        Basic technical equipment is included where indicated. Additional technical support must be arranged in advance and may incur additional charges.
+
+        <h4>6. Catering</h4>
+        Hirers may bring their own refreshments but must remove all food waste at the end of the hire period. Hot food preparation is not permitted unless the kitchen has been booked separately.
+
+        <h4>7. Liability</h4>
+        Toynbee Studios / Artsadmin accepts no liability for loss or damage to property belonging to the hirer or their guests. Hirers are strongly advised to arrange their own public liability insurance.
+
+        <h4>8. Data Protection</h4>
+        Your personal data will be held in accordance with our Privacy Policy and used solely to administer your booking. We will not share your data with third parties except as required by law.
+      </div>
+
+      <label class="agree-label">
+        <input type="checkbox" id="agree-chk" onchange="toggleAgreeBtn()">
+        <span>I have read and agree to the Terms &amp; Conditions of hire</span>
+      </label>
+
+      <button class="btn btn-solid btn-full" id="agree-btn" disabled onclick="goStep('payment')">
+        Agree &amp; Continue to Payment →
+      </button>
+    </div>
+
+    <!-- ── STEP: PAYMENT ── -->
+    <div id="step-payment" class="flow-step" style="display:none">
+      <button class="flow-back" onclick="goStep('terms')">← Back to Terms &amp; Conditions</button>
+      <div class="flow-head">
+        <h2>Payment</h2>
+        <p>Complete your payment to confirm all selected spaces</p>
+      </div>
+
+      <table class="order-tbl" id="payment-order-tbl"></table>
+
+      <!-- Stub card form -->
+      <div class="stub-card-box" id="stub-payment">
+        <div class="stub-label">🧪 Test mode — enter any values, nothing is charged</div>
+        <input id="stub-card" placeholder="Card number  4242 4242 4242 4242" maxlength="19" oninput="fmtCard(this)">
+        <div class="stub-row">
+          <input id="stub-exp" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)">
+          <input id="stub-cvc" placeholder="CVC" maxlength="4">
+        </div>
+      </div>
+
+      <!-- Real Stripe Elements -->
+      <div id="stripe-mount"></div>
+
+      <div id="pay-error"></div>
+      <button class="btn btn-solid btn-full" id="pay-btn" onclick="submitPayment()">Confirm &amp; Pay</button>
+    </div>
+
+    <!-- ── STEP: SUCCESS ── -->
+    <div id="step-success" class="flow-step" style="display:none">
+      <div class="success-icon">✅</div>
+      <div class="flow-head">
+        <h2>Booking confirmed</h2>
+        <p>Thank you — your spaces are reserved</p>
+      </div>
+      <table class="conf-table" id="success-tbl"></table>
+      <div id="success-stub-note"></div>
+      <button class="btn btn-solid" onclick="backToCalendar(); loadSlots()">Make another booking</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════ */
+const LS_KEY = 'rb5_cfg';
+let CFG = { url: '' };
+
+function saveSetup() {
+  const url = document.getElementById('cfg-url').value.trim();
+  if (!url) { toast('Please paste your Apps Script web app URL.'); return; }
+  CFG.url = cleanUrl(url);
+  localStorage.setItem(LS_KEY, JSON.stringify(CFG));
+  boot();
+}
+function loadCfg() {
+  try { const s = localStorage.getItem(LS_KEY); if (s) CFG = JSON.parse(s); } catch(_){}
+  return !!CFG.url;
+}
+function cleanUrl(u) {
+  try { const x = new URL(u); return x.origin + x.pathname.replace(/\/$/, ''); } catch(_){ return u; }
+}
+function clearTestResult() { document.getElementById('test-result').textContent = ''; }
+async function testConn() {
+  const url = document.getElementById('cfg-url').value.trim();
+  if (!url) { setTR('mid','Paste a URL first.'); return; }
+  setTR('mid','⏳ Testing…');
+  const saved = CFG.url; CFG.url = cleanUrl(url);
+  try {
+    const r = await appsCall({ action:'getAvailability' });
+    const n = (r.slots||[]).length;
+    setTR('green','✅ Connected — ' + n + ' slot'+(n===1?'':'s')+' found');
+  } catch(e) { setTR('red','❌ ' + e.message); }
+  finally { CFG.url = saved; }
+}
+function setTR(c, msg) {
+  const el = document.getElementById('test-result');
+  el.style.color = {green:'var(--green)',red:'var(--red)',mid:'var(--mid)'}[c]||'var(--mid)';
+  el.textContent = msg;
+}
+
+/* ════════════════════════════════════════════
+   JSONP  — single transport for everything
+════════════════════════════════════════════ */
+function appsCall(params) {
+  return new Promise((resolve, reject) => {
+    const cb = '_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timed out.\n\nMost likely cause: "Who has access" is set to\n"Anyone with Google account" instead of "Anyone".\n\nFix: Deploy → Manage deployments → edit → Access: Anyone → Deploy.'));
+    }, 20000);
+    function cleanup() {
+      clearTimeout(timer); delete window[cb];
+      const el = document.getElementById(cb);
+      if (el?.parentNode) el.parentNode.removeChild(el);
+    }
+    window[cb] = data => {
+      cleanup();
+      if (data?.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+    const qs  = new URLSearchParams({...params, callback: cb}).toString();
+    const tag = document.createElement('script');
+    tag.id    = cb;
+    tag.src   = CFG.url + '?' + qs;
+    tag.onerror = () => {
+      cleanup();
+      reject(new Error('Could not load Apps Script.\n\n1. Is the URL correct? (ends in /exec)\n2. Have you deployed the latest Code.gs?\n3. Is Access set to "Anyone"?\n4. Did you authorise the script?'));
+    };
+    document.head.appendChild(tag);
+  });
+}
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+let weekOffset = 0;
+let allSlots   = [];
+let basket     = [];      // slot objects the user has selected
+let guest      = {};      // {first,last,email,org}
+let isStub     = true;
+let stripeInst = null;
+let stripeEls  = null;
+
+/* ════════════════════════════════════════════
+   DATE UTILS
+════════════════════════════════════════════ */
+const weekMonday = off => { const d = new Date(), day = d.getDay()||7; d.setDate(d.getDate()-day+1+off*7); d.setHours(0,0,0,0); return d; };
+const addDays    = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
+const isoDate    = d  => d.toISOString().slice(0,10);
+const dispShort  = d  => d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+const dispDay    = d  => d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+const dispLong   = d  => d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+const weekDates  = () => Array.from({length:7},(_,i)=>addDays(weekMonday(weekOffset),i));
+
+/* ════════════════════════════════════════════
+   VIEW MANAGEMENT  — single source of truth
+   Only one view is ever .view-active at a time.
+════════════════════════════════════════════ */
+const ALL_VIEWS = ['view-setup','view-calendar','view-flow'];
+function goView(id) {
+  ALL_VIEWS.forEach(v => {
+    const el = document.getElementById(v);
+    el.classList.toggle('view-active', v === id);
+  });
+  // Basket bar is only shown on the calendar — hide it on all other views
+  const bar = document.getElementById('basket-bar');
+  if (id !== 'view-calendar') {
+    bar.classList.remove('open');
+    const calBody = document.querySelector('.cal-body');
+    if (calBody) calBody.style.paddingBottom = '32px';
+  } else {
+    renderBasket();
+  }
+  window.scrollTo(0,0);
+}
+
+/* ════════════════════════════════════════════
+   STEP MANAGEMENT  (within view-flow)
+════════════════════════════════════════════ */
+const ALL_STEPS = ['details','terms','payment','success'];
+function goStep(id) {
+  ALL_STEPS.forEach(s => {
+    document.getElementById('step-'+s).style.display = (s===id) ? 'block' : 'none';
+  });
+  // update step indicator
+  const order = ['details','terms','payment'];
+  order.forEach((s,i) => {
+    const dot = document.getElementById('step-dot-'+s);
+    if (!dot) return;
+    dot.classList.toggle('active', s===id);
+    dot.classList.toggle('done',   order.indexOf(id) > i);
+  });
+  // hide step indicator on success
+  document.getElementById('step-indicator').style.display = id==='success' ? 'none' : 'flex';
+  goView('view-flow');
+}
+
+/* ════════════════════════════════════════════
+   WEEK NAV
+════════════════════════════════════════════ */
+function renderWeekLabel() {
+  const dates = weekDates();
+  document.getElementById('week-label').textContent = dispShort(dates[0]) + ' – ' + dispShort(dates[6]);
+  document.getElementById('btn-prev').disabled = weekOffset <= 0;
+}
+document.getElementById('btn-prev').addEventListener('click', () => { if(weekOffset>0){weekOffset--;renderWeekLabel();renderGrid();} });
+document.getElementById('btn-next').addEventListener('click', () => { weekOffset++;renderWeekLabel();renderGrid(); });
+
+/* ════════════════════════════════════════════
+   RENDER GRID
+════════════════════════════════════════════ */
+function rooms() {
+  const m = new Map();
+  allSlots.forEach(s => { if(!m.has(s.roomId)) m.set(s.roomId,{roomId:s.roomId,roomName:s.roomName,capacity:s.capacity}); });
+  return [...m.values()];
+}
+const inBasket = s => basket.some(b => b._row === s._row);
+const esc = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function renderGrid() {
+  const dates   = weekDates();
+  const roomArr = rooms();
+  const todayS  = isoDate(new Date());
+  const thead   = document.getElementById('cal-thead');
+  const tbody   = document.getElementById('cal-tbody');
+
+  // Header row 1 – day names
+  let r1 = '<tr><th class="th-room-hdr" rowspan="2" style="width:110px">Space</th>';
+  dates.forEach(d => {
+    const today = isoDate(d)===todayS ? ' is-today' : '';
+    r1 += `<th class="th-day${today}" colspan="2">${dispDay(d)}</th>`;
+  });
+  r1 += '</tr>';
+
+  // Header row 2 – AM / PM
+  let r2 = '<tr>';
+  dates.forEach((_,i) => {
+    const ds = i===0 ? ' day-start' : '';
+    r2 += `<th class="th-ampm${ds}">AM</th><th class="th-ampm">PM</th>`;
+  });
+  r2 += '</tr>';
+  thead.innerHTML = r1 + r2;
+
+  // Body
+  tbody.innerHTML = roomArr.map(room => {
+    let cells = '';
+    dates.forEach((d,di) => {
+      const ds = isoDate(d);
+      ['AM','PM'].forEach((s,si) => {
+        const isFirst = di===0 && si===0;
+        const dayStart = si===0 ? ' day-start' : '';
+        const slot = allSlots.find(x => x.roomId===room.roomId && x.date===ds && x.slot===s);
+        let btn = '';
+        if (!slot) {
+          btn = `<button class="slot s-na" disabled>—</button>`;
+        } else if (inBasket(slot)) {
+          btn = `<button class="slot s-sel" onclick="toggleSlot('${slot.roomId}','${ds}','${s}')" title="Remove">
+                   <span class="s-check">✓</span>
+                   <span class="s-price">£${slot.price}</span>
+                 </button>`;
+        } else if (slot.status==='available') {
+          btn = `<button class="slot s-av" onclick="toggleSlot('${slot.roomId}','${ds}','${s}')" title="Select ${esc(room.roomName)} · ${ds} · ${s}">
+                   <span class="s-price">£${slot.price}</span>
+                   <span class="s-time">${s==='AM'?'8am–1pm':'1pm–6pm'}</span>
+                 </button>`;
+        } else if (slot.status==='hold') {
+          const mins = Math.max(0, Math.round((new Date(slot.holdExpiry)-Date.now())/60000));
+          btn = `<button class="slot s-hold" disabled><span class="s-time">On Hold</span><span class="s-timer">~${mins}m</span></button>`;
+        } else {
+          btn = `<button class="slot s-bk" disabled><span class="s-time">Booked</span></button>`;
+        }
+        cells += `<td class="td-slot${dayStart}">${btn}</td>`;
+      });
+    });
+    return `<tr>
+      <td class="td-room">
+        <div class="r-name">${esc(room.roomName)}</div>
+        <div class="r-cap">${room.capacity ? 'Up to '+room.capacity+' people' : ''}</div>
+      </td>${cells}
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   SLOT TOGGLE
+════════════════════════════════════════════ */
+function toggleSlot(roomId, date, slotLabel) {
+  const slot = allSlots.find(x => x.roomId===roomId && x.date===date && x.slot===slotLabel);
+  if (!slot) return;
+  if (inBasket(slot)) {
+    basket = basket.filter(b => b._row !== slot._row);
+  } else {
+    if (slot.status !== 'available') { toast('This slot is no longer available.'); return; }
+    basket.push(slot);
+  }
+  renderGrid();
+  renderBasket();
+}
+
+/* ════════════════════════════════════════════
+   BASKET RENDER
+════════════════════════════════════════════ */
+function renderBasket() {
+  const bar = document.getElementById('basket-bar');
+  if (basket.length === 0) {
+    bar.classList.remove('open');
+    document.querySelector('.cal-body').style.paddingBottom = '32px';
+    return;
+  }
+  bar.classList.add('open');
+  document.getElementById('basket-count').textContent = basket.length;
+  const total = basket.reduce((s,b)=>s+b.price,0);
+  document.getElementById('basket-total').textContent = '£'+total.toFixed(2);
+
+  document.getElementById('basket-list').innerHTML = basket.map((b,i) => {
+    const d = new Date(b.date+'T12:00:00');
+    return `<div class="basket-row">
+      <div class="br-room">${esc(b.roomName)}</div>
+      <div class="br-date">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>
+      <div class="br-sess">${b.slot}</div>
+      <div class="br-price">£${b.price.toFixed(2)}</div>
+      <button class="br-del" onclick="removeItem(${i})" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+
+  // measure bar height and pad cal-body so content isn't hidden behind it
+  requestAnimationFrame(() => {
+    const h = bar.offsetHeight;
+    const body = document.querySelector('.cal-body');
+    if (body) body.style.paddingBottom = (h+20)+'px';
+  });
+}
+
+function removeItem(i) { basket.splice(i,1); renderGrid(); renderBasket(); }
+function clearBasket()  { basket=[]; renderGrid(); renderBasket(); }
+
+/* ════════════════════════════════════════════
+   CHECKOUT FLOW
+════════════════════════════════════════════ */
+function startCheckout() {
+  if (basket.length===0) { toast('No slots selected.'); return; }
+  renderOrderTable('details-order-tbl');
+  // clear form
+  ['g-first','g-last','g-email','g-org'].forEach(id => { document.getElementById(id).value=''; });
+  goStep('details');
+}
+
+function submitDetails() {
+  const first = document.getElementById('g-first').value.trim();
+  const last  = document.getElementById('g-last').value.trim();
+  const email = document.getElementById('g-email').value.trim();
+  if (!first||!last)                              { toast('Please enter your full name.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Please enter a valid email address.'); return; }
+  guest = { first, last, email, org: document.getElementById('g-org').value.trim() };
+  document.getElementById('agree-chk').checked = false;
+  toggleAgreeBtn();
+  goStep('terms');
+}
+
+function toggleAgreeBtn() {
+  document.getElementById('agree-btn').disabled = !document.getElementById('agree-chk').checked;
+}
+
+async function goStep_payment_init() {
+  renderOrderTable('payment-order-tbl');
+  const total = basketTotal();
+  document.getElementById('pay-btn').textContent = `Confirm & Pay — £${total.toFixed(2)}`;
+  document.getElementById('pay-btn').disabled = false;
+  document.getElementById('pay-error').textContent = '';
+
+  // reset stub card fields
+  ['stub-card','stub-exp','stub-cvc'].forEach(id => { document.getElementById(id).value=''; });
+
+  // Fetch/stub payment intent
+  try {
+    const res = await appsCall({
+      action: 'createPaymentIntent',
+      amount: Math.round(total*100),
+      refs:   basket.map(b=>b.roomId+':'+b.date+':'+b.slot).join('|'),
+    });
+    isStub = !!res.stub;
+    window._piId     = res.paymentIntentId;
+    window._piSecret = res.clientSecret;
+
+    if (!isStub && window.Stripe && CFG.stripeKey) {
+      document.getElementById('stub-payment').style.display = 'none';
+      document.getElementById('stripe-mount').style.display = 'block';
+      if (!stripeInst) stripeInst = Stripe(CFG.stripeKey);
+      stripeEls = stripeInst.elements({
+        appearance:{ theme:'stripe', variables:{ colorPrimary:'#111111', fontFamily:'DM Sans, sans-serif' }},
+        clientSecret: res.clientSecret,
+      });
+      stripeEls.create('payment').mount('#stripe-mount');
+    } else {
+      document.getElementById('stub-payment').style.display = 'block';
+      document.getElementById('stripe-mount').style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('pay-error').textContent = '⚠ Could not prepare payment: '+e.message;
+  }
+}
+
+// Override goStep to hook in payment init
+function goStep(id) {
+  ALL_STEPS.forEach(s => {
+    document.getElementById('step-'+s).style.display = (s===id) ? 'block' : 'none';
+  });
+  const order = ['details','terms','payment'];
+  order.forEach((s,i) => {
+    const dot = document.getElementById('step-dot-'+s);
+    if (!dot) return;
+    dot.classList.toggle('active', s===id);
+    dot.classList.toggle('done',   order.indexOf(id) > i);
+  });
+  document.getElementById('step-indicator').style.display = id==='success' ? 'none' : 'flex';
+  goView('view-flow');
+  if (id==='payment') goStep_payment_init();
+}
+
+/* ════════════════════════════════════════════
+   PAYMENT SUBMIT
+════════════════════════════════════════════ */
+async function submitPayment() {
+  const btn = document.getElementById('pay-btn');
+  btn.innerHTML = '<span class="spin-sm"></span> Processing…';
+  btn.disabled  = true;
+  document.getElementById('pay-error').textContent = '';
+
+  const name  = guest.first + ' ' + guest.last;
+  const email = guest.email;
+
+  if (isStub) {
+    await delay(1300);
+    await finalise(name, email, window._piId || 'STUB');
+  } else {
+    try {
+      const { error, paymentIntent } = await stripeInst.confirmPayment({
+        elements: stripeEls,
+        confirmParams: { return_url: location.href, payment_method_data:{ billing_details:{ name, email } } },
+        redirect: 'if_required',
+      });
+      if (error) {
+        document.getElementById('pay-error').textContent = error.message;
+        btn.textContent = `Confirm & Pay — £${basketTotal().toFixed(2)}`;
+        btn.disabled = false;
+        return;
+      }
+      if (paymentIntent?.status==='succeeded') await finalise(name, email, paymentIntent.id);
+    } catch(e) {
+      document.getElementById('pay-error').textContent = e.message;
+      btn.textContent = `Confirm & Pay — £${basketTotal().toFixed(2)}`;
+      btn.disabled = false;
+    }
+  }
+}
+
+/* ════════════════════════════════════════════
+   FINALISE  — place holds + confirm all slots
+════════════════════════════════════════════ */
+async function finalise(guestName, guestEmail, piId) {
+  const held = [], errs = [];
+
+  // Step 1: hold each slot
+  for (const slot of basket) {
+    try {
+      const r = await appsCall({ action:'placeHold', rowNum: slot._row });
+      if (r.error) { errs.push(slot.roomName+': '+r.error); continue; }
+      held.push({ slot, holdRef: r.holdRef });
+    } catch(e) { errs.push(slot.roomName+': '+e.message); }
+  }
+
+  // Step 2: confirm each held slot
+  const refs = [];
+  for (const h of held) {
+    try {
+      const r = await appsCall({
+        action:          'confirmBooking',
+        rowNum:          h.slot._row,
+        paymentIntentId: piId,
+        holdRef:         h.holdRef,
+        guestName,
+        guestEmail,
+        amountPaid:      h.slot.price.toFixed(2),
+      });
+      if (r.error) { errs.push(h.slot.roomName+': '+r.error); continue; }
+      refs.push({ slot: h.slot, ref: r.bookingRef });
+      const local = allSlots.find(s => s._row===h.slot._row);
+      if (local) { local.status='booked'; local.holdExpiry=''; local.bookingRef=r.bookingRef; }
+    } catch(e) { errs.push(h.slot.roomName+': '+e.message); }
+  }
+
+  if (refs.length===0 && errs.length>0) {
+    document.getElementById('pay-error').textContent = 'Booking failed:\n'+errs.join('\n');
+    const btn = document.getElementById('pay-btn');
+    btn.textContent = `Confirm & Pay — £${basketTotal().toFixed(2)}`;
+    btn.disabled = false;
+    return;
+  }
+
+  // Build success table
+  const rows = refs.map(({slot,ref}) => {
+    const d = new Date(slot.date+'T12:00:00');
+    return `<tr>
+      <td><strong>${esc(slot.roomName)}</strong></td>
+      <td>${dispLong(d)}</td>
+      <td>${slot.slot==='AM'?'Morning (AM)':'Afternoon (PM)'}</td>
+      <td>£${slot.price.toFixed(2)}</td>
+      <td class="conf-ref">${ref}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('success-tbl').innerHTML =
+    `<thead><tr><th>Space</th><th>Date</th><th>Session</th><th>Price</th><th>Ref</th></tr></thead><tbody>${rows}</tbody>`;
+  document.getElementById('success-stub-note').innerHTML =
+    (errs.length ? `<p style="color:var(--amber);font-size:.82rem;margin-top:10px">Note: some slots could not be confirmed — ${errs.join('; ')}</p>` : '') +
+    (isStub ? `<p style="color:var(--amber);font-size:.82rem;margin-top:8px">🧪 Test booking — no real payment taken</p>` : '');
+
+  basket = [];
+  renderBasket();
+  goStep('success');
+}
+
+/* ════════════════════════════════════════════
+   ORDER TABLE HELPER
+════════════════════════════════════════════ */
+function renderOrderTable(id) {
+  const total = basketTotal();
+  const rows = basket.map(b => {
+    const d = new Date(b.date+'T12:00:00');
+    return `<tr>
+      <td>${esc(b.roomName)}</td>
+      <td>${dispLong(d)}</td>
+      <td>${b.slot==='AM'?'Morning':'Afternoon'}</td>
+      <td style="text-align:right">£${b.price.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById(id).innerHTML =
+    `<thead><tr><th>Space</th><th>Date</th><th>Session</th><th style="text-align:right">Price</th></tr></thead>` +
+    `<tbody>${rows}</tbody>` +
+    `<tfoot><tr class="trow-total"><td colspan="3">Total</td><td style="text-align:right">£${total.toFixed(2)}</td></tr></tfoot>`;
+}
+const basketTotal = () => basket.reduce((s,b)=>s+b.price,0);
+
+/* ════════════════════════════════════════════
+   BACK TO CALENDAR
+════════════════════════════════════════════ */
+function backToCalendar() {
+  basket = [];
+  renderBasket();
+  renderGrid();
+  goView('view-calendar');
+}
+
+/* ════════════════════════════════════════════
+   STUB CARD FORMATTERS
+════════════════════════════════════════════ */
+function fmtCard(el) { const v=el.value.replace(/\D/g,'').slice(0,16); el.value=v.replace(/(.{4})/g,'$1 ').trim(); }
+function fmtExp(el)  { const v=el.value.replace(/\D/g,'').slice(0,4); el.value=v.length>=3?v.slice(0,2)+' / '+v.slice(2):v; }
+
+/* ════════════════════════════════════════════
+   LOAD SLOTS
+════════════════════════════════════════════ */
+async function loadSlots() {
+  document.getElementById('cal-loading').style.display  = 'block';
+  document.getElementById('grid-scroll').style.display  = 'none';
+  try {
+    const r = await appsCall({ action:'getAvailability' });
+    allSlots = r.slots || [];
+    document.getElementById('cal-loading').style.display = 'none';
+    document.getElementById('grid-scroll').style.display = 'block';
+    renderGrid();
+    renderBasket(); // re-apply basket padding if basket is open
+  } catch(e) {
+    document.getElementById('cal-loading').innerHTML =
+      `<div style="color:var(--red);font-weight:700;text-align:left;max-width:460px">⚠ Could not load availability</div>` +
+      `<div style="color:var(--mid);font-size:.82rem;margin-top:10px;white-space:pre-wrap;line-height:1.7;max-width:460px;text-align:left">${esc(e.message)}</div>` +
+      `<button class="btn btn-outline btn-sm" style="margin-top:16px" onclick="loadSlots()">↺ Retry</button>`;
+  }
+}
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'), 3600);
+}
+const delay = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════ */
+function boot() {
+  goView('view-calendar');
+  renderWeekLabel();
+  loadSlots();
+  setInterval(()=>{
+    // only auto-refresh when on the calendar view
+    if (document.getElementById('view-calendar').classList.contains('view-active')) loadSlots();
+  }, 90000);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (loadCfg()) {
+    document.getElementById('cfg-url').value = CFG.url || '';
+    boot();
+  }
+});
+</script>
+</body>
+</html>
